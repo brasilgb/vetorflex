@@ -1,0 +1,33 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('company_modules', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('company_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('platform_module_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('activated_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('activated_at')->nullable();
+            $table->timestamp('deactivated_at')->nullable();
+            $table->unique(['company_id', 'platform_module_id']);
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('company_modules');
+    }
+};
