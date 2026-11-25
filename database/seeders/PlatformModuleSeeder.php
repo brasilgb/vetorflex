@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Modules\Customers\Enums\CustomerPermission;
 use App\Modules\ModuleManager\Models\PlatformModule;
 use Illuminate\Database\Seeder;
 
@@ -13,7 +14,7 @@ class PlatformModuleSeeder extends Seeder
     public function run(): void
     {
         foreach ([
-            ['identifier' => 'customers', 'name' => 'Clientes', 'description' => 'Base de clientes da empresa.', 'dependencies' => []],
+            ['identifier' => 'customers', 'name' => 'Clientes', 'description' => 'Base de clientes da empresa.', 'dependencies' => [], 'permissions' => CustomerPermission::catalog()],
             ['identifier' => 'products', 'name' => 'Produtos', 'description' => 'Catálogo de produtos e serviços.', 'dependencies' => []],
             ['identifier' => 'purchases', 'name' => 'Compras', 'description' => 'Fluxo de compras.', 'dependencies' => ['products']],
             ['identifier' => 'sales', 'name' => 'Vendas', 'description' => 'Fluxo de vendas.', 'dependencies' => ['customers', 'products']],

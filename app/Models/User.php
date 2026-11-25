@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Modules\Tenancy\Models\Company;
+use App\Modules\Tenancy\Models\CompanyMembership;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -48,6 +49,6 @@ class User extends Authenticatable
 
     public function companies(): BelongsToMany
     {
-        return $this->belongsToMany(Company::class)->withPivot(['role', 'is_active'])->withTimestamps();
+        return $this->belongsToMany(Company::class)->using(CompanyMembership::class)->withPivot(['role', 'is_active', 'permissions'])->withTimestamps();
     }
 }
