@@ -12,7 +12,7 @@ class CompanyPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->is_root_admin;
+        return $user->is_root_admin === true;
     }
 
     /**
@@ -28,7 +28,7 @@ class CompanyPolicy
      */
     public function create(User $user): bool
     {
-        return $user->is_root_admin;
+        return $user->is_root_admin === true;
     }
 
     /**
@@ -36,7 +36,7 @@ class CompanyPolicy
      */
     public function update(User $user, Company $company): bool
     {
-        return $user->is_root_admin;
+        return $user->is_root_admin === true;
     }
 
     /**

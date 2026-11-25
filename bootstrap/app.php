@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureCompanyRecords;
 use App\Http\Middleware\EnsureModulePermission;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
@@ -19,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'tenant' => ResolveTenant::class,
+            'tenant.records' => EnsureCompanyRecords::class,
             'module.permission' => EnsureModulePermission::class,
         ]);
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);

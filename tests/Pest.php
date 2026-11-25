@@ -1,5 +1,10 @@
 <?php
 
+use App\Models\User;
+use App\Modules\ModuleManager\Models\CompanyModule;
+use App\Modules\ModuleManager\Models\PlatformModule;
+use App\Modules\Products\Enums\ProductPermission;
+use App\Modules\Tenancy\Models\Company;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -47,4 +52,24 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+/**
+ * Autentica um membro da empresa com o módulo Produtos habilitado. Sem permissões informadas, é proprietário.
+ *
+ * @param  list<ProductPermission>|null  $permissions
+ */
+function actingAsProductsMember(Company $company, ?array $permissions = null): User
+{
+    $user = User::factory()->create();
+    $user->companies()->attach($company, [
+        'role' => $permissions === null ? 'owner' : 'operator',
+        'is_active' => true,
+        'permissions' => array_column($permissions ?? [], 'value'),
+    ]);
+    $module = PlatformModule::query()->firstOrCreate(['identifier' => 'products'], ['name' => 'Produtos', 'description' => 'Catálogo.', 'permissions' => ProductPermission::catalog()]);
+    CompanyModule::query()->firstOrCreate(['company_id' => $company->id, 'platform_module_id' => $module->id], ['activated_by' => $user->id, 'activated_at' => now()]);
+    test()->actingAs($user)->withSession(['active_company_id' => $company->id]);
+
+    return $user;
 }

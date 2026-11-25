@@ -9,3 +9,4 @@ Após os serviços ficarem saudáveis, execute `php artisan migrate --seed`. O D
 
 O menu permite selecionar a empresa ativa. Cada rota de Clientes exige a empresa ativa, o módulo habilitado e a permissão correspondente do vínculo do usuário.
 
+O seed também habilita o módulo Produtos na empresa de demonstração e cria 8 itens fictícios com categorias, marcas, variações e movimentações (`ProductDemoSeeder`, somente em `local` e `testing`). Repetir o seed não duplica itens nem movimentações.

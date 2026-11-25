@@ -46,7 +46,7 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'tenant' => [
-                'activeCompany' => $activeCompany?->only(['id', 'name']),
+                'activeCompany' => $activeCompany?->only(['id', 'name', 'timezone']),
                 'companies' => $request->user() ? $tenantContext->companiesFor($request->user())->map->only(['id', 'name'])->values() : [],
                 'modules' => $activeCompany ? $tenantContext->enabledModules($request)->map->only(['identifier', 'name'])->values() : [],
                 'permissions' => $tenantContext->permissions($request),

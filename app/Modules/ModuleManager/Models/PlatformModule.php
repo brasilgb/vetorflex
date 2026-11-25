@@ -7,6 +7,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PlatformModule extends Model
 {
+    public const DEVELOPMENT = 'development';
+
+    public const IMPLEMENTED = 'implemented';
+
     protected $fillable = ['identifier', 'name', 'description', 'icon', 'category', 'version', 'development_status', 'commercially_available', 'dependencies', 'optional_integrations', 'permissions', 'settings', 'sort_order'];
 
     protected function casts(): array

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Customers\CustomerController;
 use App\Http\Controllers\RootAdmin\CompanyController;
+use App\Http\Controllers\RootAdmin\CompanyModuleController;
 use App\Http\Controllers\RootAdmin\ModuleCatalogController;
 use App\Http\Controllers\Tenant\ActiveCompanyController;
 use Illuminate\Support\Facades\Route;
@@ -23,11 +24,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('customers/{customer}/reactivate', [CustomerController::class, 'reactivate'])->middleware(['tenant', 'module.permission:customers,customers.reactivate'])->name('customers.reactivate');
     Route::post('customers/import', [CustomerController::class, 'import'])->middleware(['tenant', 'module.permission:customers,customers.import'])->name('customers.import');
 
+    require __DIR__.'/products.php';
+
     Route::prefix('rootadmin')->name('root-admin.')->group(function (): void {
         Route::redirect('/', '/rootadmin/companies')->name('home');
         Route::get('companies', [CompanyController::class, 'index'])->name('companies.index');
         Route::post('companies', [CompanyController::class, 'store'])->name('companies.store');
+        Route::post('companies/{company}/modules/{module}', [CompanyModuleController::class, 'store'])->withoutScopedBindings()->name('companies.modules.store');
+        Route::delete('companies/{company}/modules/{module}', [CompanyModuleController::class, 'destroy'])->withoutScopedBindings()->name('companies.modules.destroy');
         Route::get('modules', [ModuleCatalogController::class, 'index'])->name('modules.index');
+        Route::patch('modules/{module}', [ModuleCatalogController::class, 'update'])->name('modules.update');
     });
 });
 

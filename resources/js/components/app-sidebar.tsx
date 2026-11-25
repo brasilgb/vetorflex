@@ -1,5 +1,5 @@
 import { Link, router, usePage } from '@inertiajs/react';
-import { LayoutGrid, UsersRound } from 'lucide-react';
+import { LayoutGrid, Package, ShieldCheck, UsersRound } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -12,14 +12,54 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { useTenant } from '@/hooks/use-tenant';
 import { dashboard } from '@/routes';
-import type { NavItem } from '@/types';
+import { index as products } from '@/routes/products';
+import { index as brands } from '@/routes/products/brands';
+import { index as categories } from '@/routes/products/categories';
+import { index as movements } from '@/routes/products/movements';
+import { index as units } from '@/routes/products/units';
+import { index as companies } from '@/routes/root-admin/companies';
+import { index as modules } from '@/routes/root-admin/modules';
+import type { Auth, NavItem } from '@/types';
 
 export function AppSidebar() {
-    const { tenant } = usePage<{ tenant: { activeCompany: { id: number; name: string } | null; companies: { id: number; name: string }[]; modules: { identifier: string; name: string }[] } }>().props;
+    const tenant = useTenant();
+    const { auth } = usePage<{ auth: Auth }>().props;
     const mainNavItems: NavItem[] = [
         { title: 'Dashboard', href: dashboard(), icon: LayoutGrid },
-        ...(tenant.modules.some((module) => module.identifier === 'customers') ? [{ title: 'Clientes', href: '/customers', icon: UsersRound }] : []),
+        ...(tenant.hasModule('customers') ? [{ title: 'Clientes', href: '/customers', icon: UsersRound }] : []),
+        ...(tenant.can('products.view')
+            ? [
+                  {
+                      title: 'Produtos',
+                      href: products(),
+                      icon: Package,
+                      items: [
+                          { title: 'Todos os produtos', href: products() },
+                          { title: 'Categorias', href: categories() },
+                          { title: 'Marcas', href: brands() },
+                          { title: 'Unidades de medida', href: units() },
+                          ...(tenant.can('products.view_inventory')
+                              ? [{ title: 'Movimentações', href: movements() }]
+                              : []),
+                      ],
+                  },
+              ]
+            : []),
+        ...(auth.user?.is_root_admin === true
+            ? [
+                  {
+                      title: 'RootAdmin',
+                      href: companies(),
+                      icon: ShieldCheck,
+                      items: [
+                          { title: 'Empresas', href: companies() },
+                          { title: 'Catálogo de módulos', href: modules() },
+                      ],
+                  },
+              ]
+            : []),
     ];
 
     return (
