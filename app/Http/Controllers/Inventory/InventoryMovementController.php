@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Inventory\ReverseInventoryMovementRequest;
 use App\Http\Requests\Inventory\StoreInventoryMovementRequest;
 use App\Modules\Inventory\Data\StockOperation;
+use App\Modules\Inventory\Enums\MovementOrigin;
 use App\Modules\Inventory\Enums\MovementType;
 use App\Modules\Inventory\Models\InventoryMovement;
 use App\Modules\Inventory\Services\InventoryService;
@@ -16,6 +17,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -79,6 +81,10 @@ class InventoryMovementController extends Controller
 
     public function reverse(ReverseInventoryMovementRequest $request, InventoryMovement $movement): RedirectResponse
     {
+        if ($movement->origin === MovementOrigin::Purchase) {
+            throw ValidationException::withMessages(['movement' => 'Movimentações de compras são corrigidas no módulo Compras, por estorno do recebimento ou devolução.']);
+        }
+
         $this->inventory->reverse($movement, $request->user(), $request->validated('reason'));
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Movimentação estornada.']);
 

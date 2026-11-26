@@ -7,6 +7,7 @@ use App\Modules\Inventory\Enums\MovementOrigin;
 
 /**
  * Pedido de movimentação. A quantidade é sempre positiva; o sinal é definido pelo serviço.
+ * `entryValue` é o valor total da aquisição: somente entradas que o informam alteram o custo médio.
  */
 readonly class StockOperation
 {
@@ -21,5 +22,6 @@ readonly class StockOperation
         public ?string $referenceId = null,
         public ?string $idempotencyKey = null,
         public ?string $unitCost = null,
+        public ?string $entryValue = null,
     ) {}
 }

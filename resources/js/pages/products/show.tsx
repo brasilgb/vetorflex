@@ -108,6 +108,13 @@ function VariantCard({
                             : formatMoney(variant.cost_price),
                     ],
                     [
+                        'Custo médio do estoque',
+                        variant.average_cost === undefined ||
+                        variant.average_cost === null
+                            ? null
+                            : formatMoney(variant.average_cost),
+                    ],
+                    [
                         'Margem / Markup',
                         variant.margin === undefined
                             ? null

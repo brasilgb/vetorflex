@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Company\CompanyMemberController;
 use App\Http\Controllers\Customers\CustomerController;
 use App\Http\Controllers\RootAdmin\CompanyController;
 use App\Http\Controllers\RootAdmin\CompanyModuleController;
@@ -25,6 +26,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('customers/import', [CustomerController::class, 'import'])->middleware(['tenant', 'module.permission:customers,customers.import'])->name('customers.import');
 
     require __DIR__.'/products.php';
+    require __DIR__.'/purchases.php';
+
+    Route::middleware('tenant')->group(function (): void {
+        Route::get('company/members', [CompanyMemberController::class, 'index'])->name('company.members.index');
+        Route::put('company/members/{member}/permissions', [CompanyMemberController::class, 'update'])->name('company.members.permissions.update');
+    });
 
     Route::prefix('rootadmin')->name('root-admin.')->group(function (): void {
         Route::redirect('/', '/rootadmin/companies')->name('home');

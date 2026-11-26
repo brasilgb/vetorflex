@@ -50,6 +50,7 @@ export type ProductVariant = {
     is_default: boolean;
     is_active: boolean;
     cost_price?: string | null;
+    average_cost?: string | null;
     margin?: string | null;
     markup?: string | null;
     balance?: string;
@@ -94,6 +95,7 @@ export type Movement = {
     sku: string | null;
     unit: string;
     is_reversed: boolean;
+    is_reversible: boolean;
 };
 
 export type SellableUnit = {

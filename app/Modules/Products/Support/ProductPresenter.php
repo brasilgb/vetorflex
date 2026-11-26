@@ -2,6 +2,8 @@
 
 namespace App\Modules\Products\Support;
 
+use App\Modules\Inventory\Enums\MovementOrigin;
+use App\Modules\Inventory\Enums\MovementType;
 use App\Modules\Inventory\Models\InventoryMovement;
 use App\Modules\Products\Enums\ProductPermission;
 use App\Modules\Products\Models\Product;
@@ -45,6 +47,7 @@ class ProductPresenter
             $data['cost_price'] = $variant->cost_price;
             $data['margin'] = Pricing::margin($variant->cost_price, $effective);
             $data['markup'] = Pricing::markup($variant->cost_price, $effective);
+            $data['average_cost'] = $product->controlsStock() ? $variant->balance?->average_cost : null;
         }
 
         if ($product->controlsStock() && $this->context->allows($request, ProductPermission::ViewInventory->value)) {
@@ -79,6 +82,7 @@ class ProductPresenter
             'sku' => $movement->variant->sku,
             'unit' => $movement->variant->product->unit->code,
             'is_reversed' => $movement->reversal !== null,
+            'is_reversible' => $movement->type !== MovementType::Reversal && $movement->reversal === null && $movement->origin !== MovementOrigin::Purchase,
         ];
     }
 }

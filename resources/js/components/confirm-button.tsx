@@ -19,7 +19,7 @@ export default function ConfirmButton({
     confirmLabel,
     ...props
 }: {
-    route: { url: string; method: 'patch' | 'delete' };
+    route: { url: string; method: 'patch' | 'delete' | 'post' };
     title: string;
     description: string;
     confirmLabel: string;

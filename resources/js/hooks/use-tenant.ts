@@ -5,6 +5,7 @@ type Tenant = {
     companies: { id: number; name: string }[];
     modules: { identifier: string; name: string }[];
     permissions: string[];
+    canManageTeam: boolean;
 };
 
 export function useTenant() {

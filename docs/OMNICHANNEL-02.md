@@ -17,7 +17,7 @@ Entrega: painel empresarial com seletor de empresa, navegação dinâmica por m�
 | Clientes usa `with('success')`, que o front-end não lê (o padrão é `Inertia::flash('toast')`) | Confirmações não aparecem ao usuário |
 | Edição de cliente regrava endereços e contatos por completo | Campos não exibidos no formulário podem ser perdidos |
 | `AddressType` diverge dos tipos aceitos em `StoreCustomerRequest` (`shipping`, `other`) | Esses tipos falham ao serem lidos |
-| `PartyFactory` é referenciada por `Party`, mas não existe | Testes não podem usar `Party::factory()` |
+| `PartyFactory` é referenciada por `Party`, mas não existia | Resolvida na OMNICHANNEL-04 |
 | `compose.yaml` usa `php:8.4-cli` sem extensões no worker | Worker não é funcional como está |
-| 26 apontamentos do PHPStan (27 antes da OMNICHANNEL-03), 12 do `tsc` e 8 arquivos fora do formato do `vp check` | `composer ci:check` não passa |
+| 20 apontamentos do PHPStan (26 antes da OMNICHANNEL-04), 12 do `tsc` e 8 arquivos fora do formato do `vp check` | `composer ci:check` não passa |
 | `yarn.lock` e `pnpm-lock.yaml` coexistem com o `package-lock.json` versionado | Definir um único gerenciador; os dois primeiros não foram versionados |

@@ -10,3 +10,5 @@ Após os serviços ficarem saudáveis, execute `php artisan migrate --seed`. O D
 O menu permite selecionar a empresa ativa. Cada rota de Clientes exige a empresa ativa, o módulo habilitado e a permissão correspondente do vínculo do usuário.
 
 O seed também habilita o módulo Produtos na empresa de demonstração e cria 8 itens fictícios com categorias, marcas, variações e movimentações (`ProductDemoSeeder`, somente em `local` e `testing`). Repetir o seed não duplica itens nem movimentações.
+
+`PurchaseDemoSeeder` (somente `local` e `testing`) habilita Compras e cria, pelos serviços reais, 4 fornecedores (um deles também cliente), itens com mais de um fornecedor, pedidos em rascunho, confirmado, parcialmente recebido e recebido, frete e descontos, compra parcelada, devolução e compra rápida. Estoque e custo médio mudam somente pelos recebimentos e devoluções. Repetir o seed, inclusive em outro dia, não duplica documentos.

@@ -180,12 +180,9 @@ export default function MovementTable({
                             <td className="p-3">{movement.reason ?? '—'}</td>
                             {canReverse && (
                                 <td className="p-3 text-right">
-                                    {movement.type !== 'reversal' &&
-                                        !movement.is_reversed && (
-                                            <ReverseDialog
-                                                movement={movement}
-                                            />
-                                        )}
+                                    {movement.is_reversible && (
+                                        <ReverseDialog movement={movement} />
+                                    )}
                                 </td>
                             )}
                         </tr>
