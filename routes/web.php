@@ -2,9 +2,14 @@
 
 use App\Http\Controllers\Company\CompanyMemberController;
 use App\Http\Controllers\Customers\CustomerController;
+use App\Http\Controllers\RootAdmin\AdministratorController;
+use App\Http\Controllers\RootAdmin\AuditLogController;
 use App\Http\Controllers\RootAdmin\CompanyController;
 use App\Http\Controllers\RootAdmin\CompanyModuleController;
 use App\Http\Controllers\RootAdmin\ModuleCatalogController;
+use App\Http\Controllers\RootAdmin\PlatformOverviewController;
+use App\Http\Controllers\RootAdmin\PlatformSettingsController;
+use App\Http\Controllers\RootAdmin\PlatformUserController;
 use App\Http\Controllers\Tenant\ActiveCompanyController;
 use Illuminate\Support\Facades\Route;
 
@@ -28,16 +33,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
     require __DIR__.'/products.php';
     require __DIR__.'/purchases.php';
     require __DIR__.'/sales.php';
+    require __DIR__.'/finance.php';
 
     Route::middleware('tenant')->group(function (): void {
         Route::get('company/members', [CompanyMemberController::class, 'index'])->name('company.members.index');
         Route::put('company/members/{member}/permissions', [CompanyMemberController::class, 'update'])->name('company.members.permissions.update');
     });
 
-    Route::prefix('rootadmin')->name('root-admin.')->group(function (): void {
-        Route::redirect('/', '/rootadmin/companies')->name('home');
+    Route::prefix('rootadmin')->name('root-admin.')->middleware('root.admin')->group(function (): void {
+        Route::get('/', PlatformOverviewController::class)->name('home');
         Route::get('companies', [CompanyController::class, 'index'])->name('companies.index');
         Route::post('companies', [CompanyController::class, 'store'])->name('companies.store');
+        Route::put('companies/{company}', [CompanyController::class, 'update'])->name('companies.update');
+        Route::patch('companies/{company}/status', [CompanyController::class, 'status'])->name('companies.status');
+        Route::get('users', [PlatformUserController::class, 'index'])->name('users.index');
+        Route::get('administrators', [AdministratorController::class, 'index'])->name('administrators.index');
+        Route::delete('administrators/{administrator}', [AdministratorController::class, 'destroy'])->name('administrators.destroy');
+        Route::get('audit', [AuditLogController::class, 'index'])->name('audit.index');
+        Route::get('settings', PlatformSettingsController::class)->name('settings');
         Route::post('companies/{company}/modules/{module}', [CompanyModuleController::class, 'store'])->withoutScopedBindings()->name('companies.modules.store');
         Route::delete('companies/{company}/modules/{module}', [CompanyModuleController::class, 'destroy'])->withoutScopedBindings()->name('companies.modules.destroy');
         Route::get('modules', [ModuleCatalogController::class, 'index'])->name('modules.index');

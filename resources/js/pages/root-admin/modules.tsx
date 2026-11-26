@@ -2,6 +2,7 @@ import { Head, router, usePage } from '@inertiajs/react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { home } from '@/routes/root-admin';
 import { index, update } from '@/routes/root-admin/modules';
 
 type PlatformModule = {
@@ -88,7 +89,7 @@ export default function Modules({ modules }: { modules: PlatformModule[] }) {
 
 Modules.layout = {
     breadcrumbs: [
-        { title: 'RootAdmin', href: index() },
+        { title: 'RootAdmin', href: home() },
         { title: 'Catálogo de módulos', href: index() },
     ],
 };

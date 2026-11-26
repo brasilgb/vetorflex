@@ -24,5 +24,8 @@ readonly class PurchaseObligation
         public array $installments,
         public string $origin,
         public string $idempotencyKey,
+        public bool $isBalanceClosed = false,
+        public string $orderDate = '',
+        public ?string $supplierName = null,
     ) {}
 }

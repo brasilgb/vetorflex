@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\User;
+use App\Modules\Finance\Enums\FinancePermission;
+use App\Modules\Finance\Models\FinanceAccount;
 use App\Modules\Inventory\Data\StockOperation;
 use App\Modules\Inventory\Services\InventoryService;
 use App\Modules\ModuleManager\Models\CompanyModule;
@@ -206,4 +208,90 @@ function saleCustomer(Company $company, array $attributes = []): Party
     $party->roles()->create(['company_id' => $company->id, 'role' => PartyRole::CUSTOMER]);
 
     return $party;
+}
+
+/**
+ * Autentica um membro com o Financeiro habilitado e, quando pedidos, outros módulos (identificadores).
+ * Sem permissões informadas, é proprietário.
+ *
+ * @param  list<FinancePermission|SalePermission|PurchasePermission|ProductPermission>|null  $permissions
+ * @param  list<string>  $alsoEnable
+ */
+function actingAsFinanceMember(Company $company, ?array $permissions = null, array $alsoEnable = []): User
+{
+    $user = User::factory()->create();
+    $user->companies()->attach($company, [
+        'role' => $permissions === null ? 'owner' : 'operator',
+        'is_active' => true,
+        'permissions' => array_column($permissions ?? [], 'value'),
+    ]);
+    $catalogs = [
+        'finance' => ['Financeiro', FinancePermission::catalog(), []],
+        'sales' => ['Vendas', SalePermission::catalog(), []],
+        'products' => ['Produtos', ProductPermission::catalog(), []],
+        'purchases' => ['Compras', PurchasePermission::catalog(), ['products']],
+    ];
+
+    foreach (['finance', ...$alsoEnable] as $identifier) {
+        [$name, $catalog, $dependencies] = $catalogs[$identifier];
+        $module = PlatformModule::query()->firstOrCreate(['identifier' => $identifier], ['name' => $name, 'description' => $name, 'dependencies' => $dependencies, 'permissions' => $catalog]);
+        CompanyModule::query()->firstOrCreate(['company_id' => $company->id, 'platform_module_id' => $module->id], ['activated_by' => $user->id, 'activated_at' => now()]);
+    }
+
+    test()->actingAs($user)->withSession(['active_company_id' => $company->id]);
+
+    return $user;
+}
+
+/** Conta financeira ativa com saldo inicial. */
+function financeAccount(Company $company, string $openingBalance = '0.00', string $name = 'Caixa'): FinanceAccount
+{
+    return FinanceAccount::query()->create([
+        'company_id' => $company->id,
+        'name' => $name,
+        'type' => 'cash',
+        'opening_balance' => $openingBalance,
+        'opening_date' => now($company->timezone)->subMonth()->format('Y-m-d'),
+        'is_active' => true,
+    ]);
+}
+
+/**
+ * Dados de um título manual, no formato da requisição.
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function financeTitleData(string $kind = 'receivable', array $overrides = []): array
+{
+    return [
+        'kind' => $kind,
+        'description' => $kind === 'receivable' ? 'Serviço prestado' : 'Aluguel',
+        'amount' => '100.00',
+        'competence_date' => now()->format('Y-m-d'),
+        'due_date' => now()->addDays(5)->format('Y-m-d'),
+        'idempotency_key' => (string) Str::uuid(),
+        ...$overrides,
+    ];
+}
+
+/**
+ * Dados de uma baixa, no formato da requisição.
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function settlementData(FinanceAccount $account, string $principal, array $overrides = []): array
+{
+    return [
+        'finance_account_id' => $account->id,
+        'settled_at' => now()->format('Y-m-d'),
+        'method' => 'pix',
+        'principal' => $principal,
+        'interest' => '0',
+        'fine' => '0',
+        'discount' => '0',
+        'idempotency_key' => (string) Str::uuid(),
+        ...$overrides,
+    ];
 }

@@ -4,3 +4,5 @@ export type * from './ui';
 export type * from './products';
 export type * from './purchases';
 export type * from './sales';
+export type * from './finance';
+export type * from './platform';

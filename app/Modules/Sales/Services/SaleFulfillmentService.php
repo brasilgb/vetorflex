@@ -14,6 +14,7 @@ use App\Modules\Sales\Enums\DeliveryMethod;
 use App\Modules\Sales\Enums\FulfillmentStatus;
 use App\Modules\Sales\Enums\SaleOrderStatus;
 use App\Modules\Sales\Events\SaleFulfilled;
+use App\Modules\Sales\Events\SaleFulfillmentReversed;
 use App\Modules\Sales\Models\SaleFulfillment;
 use App\Modules\Sales\Models\SaleFulfillmentItem;
 use App\Modules\Sales\Models\SaleOrder;
@@ -99,6 +100,7 @@ class SaleFulfillmentService
             $this->updateStatus($order, $orderItems, $user, "Estorno do atendimento #{$fulfillment->number}: {$reason}".($wasClosed ? ' Saldo pendente reaberto.' : ''));
             $this->orders->syncReservations($order, $orderItems->values());
             $this->audit->record('sales.fulfillment_reversed', $order->company, $user, $fulfillment, ['number' => $fulfillment->number, 'reason' => $reason]);
+            SaleFulfillmentReversed::dispatch($order);
 
             return $fulfillment;
         }, self::TRANSACTION_ATTEMPTS);

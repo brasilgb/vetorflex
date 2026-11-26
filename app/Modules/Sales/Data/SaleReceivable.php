@@ -11,6 +11,7 @@ readonly class SaleReceivable
     /**
      * @param  list<array{sequence: int, due_date: string, amount: string, method: string|null, is_entry: bool, idempotency_key: string}>  $installments
      * @param  list<array{number: int, returned_at: string, amount: string, idempotency_key: string}>  $returns
+     * @param  string  $closedBalanceValue  Valor líquido dos itens não atendidos quando o saldo foi encerrado; deixa de ser devido.
      */
     public function __construct(
         public int $companyId,
@@ -28,5 +29,7 @@ readonly class SaleReceivable
         public array $returns,
         public string $origin,
         public string $idempotencyKey,
+        public string $closedBalanceValue = '0.00',
+        public string $orderDate = '',
     ) {}
 }

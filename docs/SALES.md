@@ -63,7 +63,7 @@ A situação é comercial e de atendimento. A situação financeira pertence ao 
 ## Contratos e eventos
 
 - `SaleReceivableSource::receivableFor(SaleOrder)` (`SaleReceivables`, vinculado no container) devolve `SaleReceivable`: empresa, cliente, venda, situação, valor, atendido, devolvido, parcelas e devoluções, com chaves idempotentes. Nulo para rascunhos. Vendas não grava tabelas financeiras.
-- Eventos (`ShouldDispatchAfterCommit`): `QuoteApproved`, `QuoteConverted`, `SaleConfirmed`, `SaleFulfilled`, `SaleCompleted`, `SaleCancelled`, `SaleReturnRegistered`. Nenhum ouvinte é registrado nesta etapa.
+- Eventos (`ShouldDispatchAfterCommit`): `QuoteApproved`, `QuoteConverted`, `SaleConfirmed`, `SaleFulfilled`, `SaleCompleted`, `SaleCancelled`, `SaleReturnRegistered`, `SaleBalanceClosed` e `SaleFulfillmentReversed`. O Financeiro ouve confirmação, cancelamento, devolução, encerramento de saldo e estorno de atendimento (`FINANCE.md`); sem Financeiro habilitado, nada acontece.
 - Origens `pos`, `ecommerce` e `integration` já existem em `SaleOrigin` para PDV, lojas e integrações.
 
 ## Documentos

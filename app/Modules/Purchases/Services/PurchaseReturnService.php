@@ -9,6 +9,7 @@ use App\Modules\Inventory\Data\StockOperation;
 use App\Modules\Inventory\Enums\MovementOrigin;
 use App\Modules\Inventory\Services\InventoryService;
 use App\Modules\Purchases\Enums\ReceiptStatus;
+use App\Modules\Purchases\Events\PurchaseReturnRegistered;
 use App\Modules\Purchases\Models\PurchaseReceipt;
 use App\Modules\Purchases\Models\PurchaseReceiptItem;
 use App\Modules\Purchases\Models\PurchaseReturn;
@@ -120,6 +121,7 @@ class PurchaseReturnService
 
         $return->update(['total_value' => PurchaseMath::money($total)]);
         $this->audit->record('purchase.return_registered', $order->company, $user, $return, ['number' => $return->number]);
+        PurchaseReturnRegistered::dispatch($order);
 
         return $return;
     }

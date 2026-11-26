@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureCompanyRecords;
 use App\Http\Middleware\EnsureModulePermission;
+use App\Http\Middleware\EnsureRootAdmin;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\ResolveTenant;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant' => ResolveTenant::class,
             'tenant.records' => EnsureCompanyRecords::class,
             'module.permission' => EnsureModulePermission::class,
+            'root.admin' => EnsureRootAdmin::class,
         ]);
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 

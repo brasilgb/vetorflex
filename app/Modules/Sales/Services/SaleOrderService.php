@@ -11,6 +11,7 @@ use App\Modules\Inventory\Services\InventoryReservationService;
 use App\Modules\Sales\Data\SaleAbilities;
 use App\Modules\Sales\Enums\SaleOrderStatus;
 use App\Modules\Sales\Enums\SaleOrigin;
+use App\Modules\Sales\Events\SaleBalanceClosed;
 use App\Modules\Sales\Events\SaleCancelled;
 use App\Modules\Sales\Events\SaleCompleted;
 use App\Modules\Sales\Events\SaleConfirmed;
@@ -177,6 +178,7 @@ class SaleOrderService
             $order->update(['balance_closed_at' => now()]);
             $this->releaseReservations($order);
             $this->transition($order, SaleOrderStatus::Fulfilled, $user, "Saldo não atendido encerrado: {$reason}");
+            SaleBalanceClosed::dispatch($order);
 
             return $order;
         }, self::TRANSACTION_ATTEMPTS);

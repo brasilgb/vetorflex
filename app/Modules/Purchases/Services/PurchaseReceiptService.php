@@ -10,6 +10,7 @@ use App\Modules\Inventory\Enums\MovementOrigin;
 use App\Modules\Inventory\Services\InventoryService;
 use App\Modules\Purchases\Enums\PurchaseOrderStatus;
 use App\Modules\Purchases\Enums\ReceiptStatus;
+use App\Modules\Purchases\Events\PurchaseReceiptReversed;
 use App\Modules\Purchases\Models\PurchaseOrder;
 use App\Modules\Purchases\Models\PurchaseOrderItem;
 use App\Modules\Purchases\Models\PurchaseReceipt;
@@ -91,6 +92,7 @@ class PurchaseReceiptService
             }
 
             $this->audit->record('purchase.receipt_reversed', $order->company, $user, $receipt, ['number' => $receipt->number, 'reason' => $reason]);
+            PurchaseReceiptReversed::dispatch($order);
 
             return $receipt;
         }, self::TRANSACTION_ATTEMPTS);

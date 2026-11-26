@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Finance\Services\FinanceRecurrenceService;
 use App\Modules\Products\Models\ProductImport;
 use App\Modules\Purchases\Models\SupplierImport;
 use App\Modules\Sales\Services\SaleQuoteService;
@@ -28,3 +29,17 @@ Artisan::command('sales:expire-quotes', function (SaleQuoteService $quotes, Tena
 })->purpose('Expira orçamentos emitidos com validade vencida');
 
 Schedule::command('sales:expire-quotes')->dailyAt('00:10');
+
+Artisan::command('finance:generate-recurrences', function (FinanceRecurrenceService $recurrences, TenantContext $tenants) {
+    $created = 0;
+
+    foreach (Company::query()->where('status', 'active')->orderBy('id')->get() as $company) {
+        if ($tenants->enabledModulesFor($company)->contains('identifier', 'finance')) {
+            $created += $recurrences->generateAll($company);
+        }
+    }
+
+    $this->info("Títulos recorrentes gerados: {$created}.");
+})->purpose('Gera os títulos das receitas e despesas recorrentes, sem baixa automática');
+
+Schedule::command('finance:generate-recurrences')->dailyAt('00:20');

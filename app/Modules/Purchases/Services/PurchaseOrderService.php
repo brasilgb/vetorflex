@@ -12,6 +12,9 @@ use App\Modules\Products\Enums\ProductType;
 use App\Modules\Products\Models\ProductVariant;
 use App\Modules\Products\Services\ProductCatalog;
 use App\Modules\Purchases\Enums\PurchaseOrderStatus;
+use App\Modules\Purchases\Events\PurchaseBalanceClosed;
+use App\Modules\Purchases\Events\PurchaseCancelled;
+use App\Modules\Purchases\Events\PurchaseConfirmed;
 use App\Modules\Purchases\Models\PurchaseOrder;
 use App\Modules\Purchases\Models\PurchaseOrderItem;
 use App\Modules\Purchases\Models\PurchasePaymentSchedule;
@@ -134,6 +137,7 @@ class PurchaseOrderService
 
             $order->update(['confirmed_at' => now()]);
             $this->transition($order, PurchaseOrderStatus::Confirmed, $user);
+            PurchaseConfirmed::dispatch($order);
 
             return $order;
         }, self::TRANSACTION_ATTEMPTS);
@@ -149,6 +153,7 @@ class PurchaseOrderService
             }
 
             $this->transition($order, PurchaseOrderStatus::Cancelled, $user, $reason);
+            PurchaseCancelled::dispatch($order);
 
             return $order;
         }, self::TRANSACTION_ATTEMPTS);
@@ -166,6 +171,7 @@ class PurchaseOrderService
 
             $order->update(['balance_closed_at' => now()]);
             $this->transition($order, PurchaseOrderStatus::Received, $user, "Saldo pendente encerrado: {$reason}");
+            PurchaseBalanceClosed::dispatch($order);
 
             return $order;
         }, self::TRANSACTION_ATTEMPTS);

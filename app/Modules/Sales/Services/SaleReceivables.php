@@ -10,6 +10,8 @@ use App\Modules\Sales\Enums\SaleOrderStatus;
 use App\Modules\Sales\Models\SaleOrder;
 use App\Modules\Sales\Models\SalePaymentSchedule;
 use App\Modules\Sales\Models\SaleReturn;
+use App\Modules\Tenancy\Models\Company;
+use Brick\Math\BigDecimal;
 
 class SaleReceivables implements SaleReceivableSource
 {
@@ -49,6 +51,28 @@ class SaleReceivables implements SaleReceivableSource
             ])->all()),
             origin: 'sale_order',
             idempotencyKey: "sale-order:{$order->id}",
+            closedBalanceValue: $this->closedBalanceValue($order),
+            orderDate: $order->order_date->format('Y-m-d'),
         );
+    }
+
+    public function receivablesBetween(Company $company, string $from, string $until): array
+    {
+        return array_values(SaleOrder::query()->where('company_id', $company->id)->whereNotNull('confirmed_at')
+            ->whereBetween('order_date', [$from, $until])->orderBy('order_date')->orderBy('id')->get()
+            ->map(fn (SaleOrder $order): ?SaleReceivable => $this->receivableFor($order))->filter()->all());
+    }
+
+    /** Valor líquido dos itens que deixaram de ser atendidos com o encerramento do saldo. */
+    private function closedBalanceValue(SaleOrder $order): string
+    {
+        if ($order->balance_closed_at === null) {
+            return '0.00';
+        }
+
+        $net = (string) ($order->items()->sum('net_total') ?: '0');
+        $fulfilled = (string) ($order->fulfillments()->where('status', FulfillmentStatus::Confirmed)->sum('revenue') ?: '0');
+
+        return CommercialMath::money(BigDecimal::max(BigDecimal::zero(), BigDecimal::of($net)->minus($fulfilled)));
     }
 }

@@ -7,6 +7,7 @@ import {
     ShieldCheck,
     ShoppingCart,
     UsersRound,
+    Wallet,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
@@ -22,6 +23,18 @@ import {
 } from '@/components/ui/sidebar';
 import { useTenant } from '@/hooks/use-tenant';
 import { dashboard } from '@/routes';
+import {
+    cashFlow,
+    dashboard as finance,
+    settings as financeSettings,
+} from '@/routes/finance';
+import { index as financeAccounts } from '@/routes/finance/accounts';
+import { index as financeMovements } from '@/routes/finance/movements';
+import { index as reconciliation } from '@/routes/finance/reconciliation';
+import { index as recurrences } from '@/routes/finance/recurrences';
+import { index as financeReports } from '@/routes/finance/reports';
+import { index as financeTitles } from '@/routes/finance/titles';
+import { index as financeTransfers } from '@/routes/finance/transfers';
 import { index as products } from '@/routes/products';
 import { index as brands } from '@/routes/products/brands';
 import { index as categories } from '@/routes/products/categories';
@@ -42,8 +55,15 @@ import {
 } from '@/routes/sales/orders';
 import { create as createQuote, index as quotes } from '@/routes/sales/quotes';
 import { index as saleReturns } from '@/routes/sales/returns';
+import {
+    home as rootAdminHome,
+    settings as platformSettings,
+} from '@/routes/root-admin';
+import { index as administrators } from '@/routes/root-admin/administrators';
+import { index as auditLogs } from '@/routes/root-admin/audit';
 import { index as companies } from '@/routes/root-admin/companies';
 import { index as modules } from '@/routes/root-admin/modules';
+import { index as platformUsers } from '@/routes/root-admin/users';
 import type { Auth, NavItem } from '@/types';
 
 export function AppSidebar() {
@@ -136,6 +156,30 @@ export function AppSidebar() {
                   },
               ]
             : []),
+        ...(tenant.hasModule('finance')
+            ? [
+                  {
+                      title: 'Financeiro',
+                      href: finance(),
+                      icon: Wallet,
+                      items: [
+                          { permission: 'finance.view_dashboard', title: 'Visão geral', href: finance() },
+                          { permission: 'finance.view_receivables', title: 'Contas a receber', href: financeTitles('receivables') },
+                          { permission: 'finance.view_payables', title: 'Contas a pagar', href: financeTitles('payables') },
+                          { permission: 'finance.view_accounts', title: 'Movimentações', href: financeMovements() },
+                          { permission: 'finance.view_accounts', title: 'Contas financeiras', href: financeAccounts() },
+                          { permission: 'finance.view_accounts', title: 'Transferências', href: financeTransfers() },
+                          { permission: 'finance.view_reports', title: 'Fluxo de caixa', href: cashFlow() },
+                          { permission: 'finance.manage_recurrences', title: 'Recorrências', href: recurrences() },
+                          { permission: 'finance.reconcile', title: 'Conciliação', href: reconciliation() },
+                          { permission: 'finance.view_reports', title: 'Relatórios', href: financeReports() },
+                          { permission: 'finance.manage_categories', title: 'Configurações', href: financeSettings() },
+                      ]
+                          .filter(({ permission }) => tenant.can(permission))
+                          .map(({ title, href }) => ({ title, href })),
+                  },
+              ]
+            : []),
         ...(tenant.canManageTeam && tenant.activeCompany !== null
             ? [
                   {
@@ -149,11 +193,16 @@ export function AppSidebar() {
             ? [
                   {
                       title: 'RootAdmin',
-                      href: companies(),
+                      href: rootAdminHome(),
                       icon: ShieldCheck,
                       items: [
+                          { title: 'Visão geral', href: rootAdminHome() },
                           { title: 'Empresas', href: companies() },
+                          { title: 'Usuários', href: platformUsers() },
                           { title: 'Catálogo de módulos', href: modules() },
+                          { title: 'Administradores', href: administrators() },
+                          { title: 'Auditoria', href: auditLogs() },
+                          { title: 'Configurações', href: platformSettings() },
                       ],
                   },
               ]

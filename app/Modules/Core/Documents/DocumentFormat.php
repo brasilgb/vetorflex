@@ -27,6 +27,11 @@ class DocumentFormat
         return $sign.number_format((int) ltrim($integer, '-'), 0, ',', '.').($fraction === '' ? '' : ",{$fraction}");
     }
 
+    public static function date(string $value): string
+    {
+        return implode('/', array_reverse(explode('-', substr($value, 0, 10))));
+    }
+
     public static function quantity(string $value): string
     {
         return self::decimal($value, 0, 4);

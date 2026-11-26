@@ -2,8 +2,11 @@
 
 namespace App\Modules\Core\Models;
 
+use App\Models\User;
+use App\Modules\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * @property int $id
@@ -20,5 +23,17 @@ class AuditLog extends Model
     protected function casts(): array
     {
         return ['context' => 'array', 'occurred_at' => 'datetime'];
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /** @return BelongsTo<Company, $this> */
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 }
