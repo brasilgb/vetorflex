@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Modules\Purchases\Enums;
+namespace App\Modules\Core\Commerce;
 
 /**
  * Previsão comercial. Não representa pagamento efetuado.

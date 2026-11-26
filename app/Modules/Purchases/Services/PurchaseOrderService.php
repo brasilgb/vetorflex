@@ -3,20 +3,20 @@
 namespace App\Modules\Purchases\Services;
 
 use App\Models\User;
+use App\Modules\Core\Commerce\PaymentCondition;
+use App\Modules\Core\Commerce\PaymentSchedule;
 use App\Modules\Core\Services\AuditService;
 use App\Modules\Core\Services\SequenceService;
 use App\Modules\Parties\Support\BrazilianDocument;
 use App\Modules\Products\Enums\ProductType;
 use App\Modules\Products\Models\ProductVariant;
 use App\Modules\Products\Services\ProductCatalog;
-use App\Modules\Purchases\Enums\PaymentCondition;
 use App\Modules\Purchases\Enums\PurchaseOrderStatus;
 use App\Modules\Purchases\Models\PurchaseOrder;
 use App\Modules\Purchases\Models\PurchaseOrderItem;
 use App\Modules\Purchases\Models\PurchasePaymentSchedule;
 use App\Modules\Purchases\Models\SupplierProduct;
 use App\Modules\Purchases\Models\SupplierProfile;
-use App\Modules\Purchases\Support\PaymentSchedule;
 use App\Modules\Purchases\Support\PurchaseMath;
 use App\Modules\Tenancy\Models\Company;
 use Brick\Math\BigDecimal;

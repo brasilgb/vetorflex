@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Modules\Purchases\Contracts\PurchaseObligationSource;
+use App\Modules\Purchases\Services\PurchaseObligations;
+use App\Modules\Sales\Contracts\SaleReceivableSource;
+use App\Modules\Sales\Services\SaleReceivables;
 use App\Modules\Tenancy\Models\Company;
 use App\Policies\Modules\Tenancy\Policies\CompanyPolicy;
 use Carbon\CarbonImmutable;
@@ -18,7 +22,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(PurchaseObligationSource::class, PurchaseObligations::class);
+        $this->app->bind(SaleReceivableSource::class, SaleReceivables::class);
     }
 
     /**

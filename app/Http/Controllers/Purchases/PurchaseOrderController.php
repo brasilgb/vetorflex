@@ -4,12 +4,12 @@ namespace App\Http\Controllers\Purchases;
 
 use App\Http\Requests\Purchases\PurchaseReasonRequest;
 use App\Http\Requests\Purchases\SavePurchaseOrderRequest;
+use App\Modules\Core\Commerce\PaymentCondition;
+use App\Modules\Core\Commerce\PaymentMethod;
 use App\Modules\Core\Services\AuditService;
 use App\Modules\Core\Support\CsvFormat;
 use App\Modules\Products\Models\ProductVariant;
 use App\Modules\Products\Services\ProductCatalog;
-use App\Modules\Purchases\Enums\PaymentCondition;
-use App\Modules\Purchases\Enums\PaymentMethod;
 use App\Modules\Purchases\Enums\PurchaseOrderStatus;
 use App\Modules\Purchases\Models\PurchaseOrder;
 use App\Modules\Purchases\Models\PurchaseReceipt;

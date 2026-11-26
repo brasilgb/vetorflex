@@ -27,6 +27,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     require __DIR__.'/products.php';
     require __DIR__.'/purchases.php';
+    require __DIR__.'/sales.php';
 
     Route::middleware('tenant')->group(function (): void {
         Route::get('company/members', [CompanyMemberController::class, 'index'])->name('company.members.index');

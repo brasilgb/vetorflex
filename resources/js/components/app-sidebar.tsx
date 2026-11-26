@@ -3,6 +3,7 @@ import {
     KeyRound,
     LayoutGrid,
     Package,
+    Receipt,
     ShieldCheck,
     ShoppingCart,
     UsersRound,
@@ -33,6 +34,14 @@ import { create as quickPurchase } from '@/routes/purchases/quick';
 import { index as receipts } from '@/routes/purchases/receipts';
 import { index as purchaseReturns } from '@/routes/purchases/returns';
 import { index as suppliers } from '@/routes/purchases/suppliers';
+import { dashboard as sales } from '@/routes/sales';
+import { index as fulfillments } from '@/routes/sales/fulfillments';
+import {
+    create as createSale,
+    index as saleOrders,
+} from '@/routes/sales/orders';
+import { create as createQuote, index as quotes } from '@/routes/sales/quotes';
+import { index as saleReturns } from '@/routes/sales/returns';
 import { index as companies } from '@/routes/root-admin/companies';
 import { index as modules } from '@/routes/root-admin/modules';
 import type { Auth, NavItem } from '@/types';
@@ -89,6 +98,40 @@ export function AppSidebar() {
                           { title: 'Recebimentos', href: receipts() },
                           { title: 'Fornecedores', href: suppliers() },
                           { title: 'Devoluções', href: purchaseReturns() },
+                      ],
+                  },
+              ]
+            : []),
+        ...(tenant.can('sales.view')
+            ? [
+                  {
+                      title: 'Vendas',
+                      href: sales(),
+                      icon: Receipt,
+                      items: [
+                          { title: 'Visão geral', href: sales() },
+                          { title: 'Orçamentos', href: quotes() },
+                          ...(tenant.can('sales.manage_quotes')
+                              ? [
+                                    {
+                                        title: 'Novo orçamento',
+                                        href: createQuote(),
+                                    },
+                                ]
+                              : []),
+                          { title: 'Pedidos', href: saleOrders() },
+                          ...(tenant.can('sales.create')
+                              ? [
+                                    {
+                                        title: 'Nova venda',
+                                        href: createSale({
+                                            query: { quick: 1 },
+                                        }),
+                                    },
+                                ]
+                              : []),
+                          { title: 'Atendimentos', href: fulfillments() },
+                          { title: 'Devoluções', href: saleReturns() },
                       ],
                   },
               ]

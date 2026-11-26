@@ -1,6 +1,6 @@
 # Núcleo interno de estoque
 
-Mecanismo compartilhado por Produtos, Compras e pelas futuras Vendas. O estoque avançado será um módulo comercial à parte.
+Mecanismo compartilhado por Produtos, Compras e Vendas. O estoque avançado será um módulo comercial à parte.
 
 ## Regras
 
@@ -31,7 +31,7 @@ Sempre recusado. Para torná-lo configurável: ler a opção de `companies.setti
 
 | Necessidade | Onde estender |
 |---|---|
-| Reserva | Nova tabela, sob o mesmo bloqueio; disponível = saldo − reservas |
+| Reserva | Implementada (`InventoryReservationService`, OMNICHANNEL-05) |
 | Sincronização com canais | Evento emitido após o commit de `InventoryService::record` |
 
 ## Verificação de concorrência
@@ -43,3 +43,7 @@ Em 26/11/2026, em MariaDB 11.8 local (banco temporário), pelos serviços de Com
 ## Limitação
 
 A imutabilidade é garantida no model, não no banco: SQL direto ainda conseguiria alterar o histórico.
+
+## Reservas
+
+`InventoryReservationService::reserve(empresa, unidade, tipo, referência, quantidade)` define a quantidade reservada por um documento (semântica de "definir", idempotente) e mantém `inventory_balances.reserved_quantity`. Bloqueia a unidade comercializável e o saldo, como `InventoryService`, e exige transação aberta. Só reserva o disponível (saldo − reservas de outros documentos). `availabilityOf` devolve saldo, reservado e disponível. Saídas de `InventoryService` não podem consumir o reservado para outros documentos; quem reservou reduz a reserva antes da saída. Usado por Vendas (`sale_order_item`) e disponível para PDV e lojas virtuais.

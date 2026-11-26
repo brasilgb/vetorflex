@@ -6,7 +6,7 @@ import FormField from '@/components/form-field';
 import InputError from '@/components/input-error';
 import NativeSelect from '@/components/native-select';
 import NativeTextarea from '@/components/native-textarea';
-import RemoteLookup from '@/components/purchases/remote-lookup';
+import RemoteLookup from '@/components/remote-lookup';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { formatMoney, parseDecimal, toDecimalInput } from '@/lib/decimal';

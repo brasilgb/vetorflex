@@ -18,6 +18,9 @@ use Illuminate\Validation\ValidationException;
  * Único ponto de escrita de saldo. A linha da unidade comercializável é o mutex de cada operação;
  * por isso ela é bloqueada antes de qualquer outra leitura. Operações com vários itens devem
  * processá-los em ordem crescente de unidade comercializável para evitar deadlocks.
+ *
+ * Saídas respeitam as reservas (InventoryReservationService). Ajustes de contagem e estornos refletem a realidade
+ * física e não são bloqueados por elas.
  */
 class InventoryService
 {
@@ -176,6 +179,15 @@ class InventoryService
 
         if ($after->isNegative()) {
             throw ValidationException::withMessages(['quantity' => "Estoque insuficiente. Saldo disponível: {$this->format($before)}."]);
+        }
+
+        // Saídas não consomem o reservado para outros documentos; quem reservou libera a reserva antes da saída.
+        $reserved = BigDecimal::of($balance->reserved_quantity ?? '0');
+
+        if ($type === MovementType::Exit && $after->isLessThan($reserved)) {
+            $available = BigDecimal::max(BigDecimal::zero(), $before->minus($reserved));
+
+            throw ValidationException::withMessages(['quantity' => "Estoque insuficiente: parte do saldo está reservada. Disponível: {$this->format($available)}."]);
         }
 
         if ($after->isGreaterThan(self::MAXIMUM_QUANTITY)) {
