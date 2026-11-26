@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $company_id
  * @property int $product_variant_id
  * @property string $quantity
+ * @property string|null $average_cost Custo médio ponderado móvel; nulo até o primeiro recebimento com valor.
  */
 class InventoryBalance extends Model
 {
@@ -18,6 +19,6 @@ class InventoryBalance extends Model
 
     protected function casts(): array
     {
-        return ['quantity' => 'decimal:4'];
+        return ['quantity' => 'decimal:4', 'average_cost' => 'decimal:6'];
     }
 }

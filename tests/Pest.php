@@ -4,6 +4,12 @@ use App\Models\User;
 use App\Modules\ModuleManager\Models\CompanyModule;
 use App\Modules\ModuleManager\Models\PlatformModule;
 use App\Modules\Products\Enums\ProductPermission;
+use App\Modules\Products\Enums\ProductType;
+use App\Modules\Products\Models\Product;
+use App\Modules\Products\Models\ProductVariant;
+use App\Modules\Products\Models\UnitOfMeasure;
+use App\Modules\Purchases\Enums\PurchasePermission;
+use App\Modules\Purchases\Models\SupplierProfile;
 use App\Modules\Tenancy\Models\Company;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -72,4 +78,53 @@ function actingAsProductsMember(Company $company, ?array $permissions = null): U
     test()->actingAs($user)->withSession(['active_company_id' => $company->id]);
 
     return $user;
+}
+
+/**
+ * Autentica um membro com Produtos e Compras habilitados. Sem permissões informadas, é proprietário.
+ *
+ * @param  list<PurchasePermission|ProductPermission>|null  $permissions
+ */
+function actingAsPurchasesMember(Company $company, ?array $permissions = null): User
+{
+    $user = actingAsProductsMember($company, $permissions);
+    $module = PlatformModule::query()->firstOrCreate(['identifier' => 'purchases'], ['name' => 'Compras', 'description' => 'Compras.', 'dependencies' => ['products'], 'permissions' => PurchasePermission::catalog()]);
+    CompanyModule::query()->firstOrCreate(['company_id' => $company->id, 'platform_module_id' => $module->id], ['activated_by' => $user->id, 'activated_at' => now()]);
+
+    return $user;
+}
+
+/** Unidade comercializável de um produto com estoque controlado, ou de um serviço. */
+function purchasableVariant(Company $company, ?string $costPrice = null, bool $isFractional = false, bool $isService = false): ProductVariant
+{
+    $unit = UnitOfMeasure::factory()->create(['company_id' => $company->id, 'allows_fraction' => $isFractional]);
+    $product = Product::factory()->state($isService ? ['type' => ProductType::Service, 'tracks_inventory' => false] : [])
+        ->create(['company_id' => $company->id, 'unit_of_measure_id' => $unit->id]);
+
+    return ProductVariant::factory()->for($product)->create(['cost_price' => $costPrice]);
+}
+
+/**
+ * Dados de um pedido de compra à vista, no formato da requisição.
+ *
+ * @param  list<array<string, mixed>>  $items
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function purchaseOrderData(SupplierProfile $supplier, array $items, array $overrides = []): array
+{
+    return [
+        'supplier_profile_id' => $supplier->id,
+        'order_date' => now()->format('Y-m-d'),
+        'expected_date' => null,
+        'discount' => '0',
+        'freight' => '0',
+        'insurance' => '0',
+        'other_costs' => '0',
+        'payment_condition' => 'undefined',
+        'payment_method' => null,
+        'installments' => [],
+        'items' => $items,
+        ...$overrides,
+    ];
 }

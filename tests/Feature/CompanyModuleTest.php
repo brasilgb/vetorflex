@@ -61,12 +61,12 @@ test('only the root admin manages modules', function (string $method, string $pa
 test('commercial availability requires an implemented module and survives a new seed', function () {
     $this->seed(PlatformModuleSeeder::class);
     $products = PlatformModule::query()->where('identifier', 'products')->sole();
-    $purchases = PlatformModule::query()->where('identifier', 'purchases')->sole();
+    $sales = PlatformModule::query()->where('identifier', 'sales')->sole();
     expect($products)->development_status->toBe('implemented')->version->toBe('1.0.0')->commercially_available->toBeFalse();
 
     $this->actingAs(rootAdmin());
     $this->patch("/rootadmin/modules/{$products->id}", ['commercially_available' => true])->assertSessionHasNoErrors();
-    $this->patch("/rootadmin/modules/{$purchases->id}", ['commercially_available' => true])->assertSessionHasErrors('commercially_available');
+    $this->patch("/rootadmin/modules/{$sales->id}", ['commercially_available' => true])->assertSessionHasErrors('commercially_available');
     $this->seed(PlatformModuleSeeder::class);
 
     expect($products->refresh()->commercially_available)->toBeTrue();

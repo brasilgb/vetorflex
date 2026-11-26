@@ -12,6 +12,8 @@ class PartyRole extends Model
 {
     public const CUSTOMER = 'customer';
 
+    public const SUPPLIER = 'supplier';
+
     protected $fillable = ['company_id', 'party_id', 'role'];
 
     /** @return BelongsTo<Party, $this> */

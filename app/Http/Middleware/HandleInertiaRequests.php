@@ -50,6 +50,7 @@ class HandleInertiaRequests extends Middleware
                 'companies' => $request->user() ? $tenantContext->companiesFor($request->user())->map->only(['id', 'name'])->values() : [],
                 'modules' => $activeCompany ? $tenantContext->enabledModules($request)->map->only(['identifier', 'name'])->values() : [],
                 'permissions' => $tenantContext->permissions($request),
+                'canManageTeam' => in_array($tenantContext->membership($request)?->role?->value, ['owner', 'administrator'], true),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];

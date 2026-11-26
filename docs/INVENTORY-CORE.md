@@ -1,6 +1,6 @@
 # Núcleo interno de estoque
 
-Mecanismo compartilhado por Produtos e pelos futuros Compras e Vendas. O estoque avançado será um módulo comercial à parte.
+Mecanismo compartilhado por Produtos, Compras e pelas futuras Vendas. O estoque avançado será um módulo comercial à parte.
 
 ## Regras
 
@@ -19,9 +19,9 @@ Mecanismo compartilhado por Produtos e pelos futuros Compras e Vendas. O estoque
 | Entrada e saída | `recordEntry`, `recordExit` |
 | Ajuste | `adjustTo`, recebe o saldo contado e grava a diferença |
 | Estorno | `reverse` |
-| Consulta | `balanceOf`, `balancesOf` |
+| Consulta | `balanceOf`, `balancesOf`, `averageCostOf` |
 
-`StockOperation` leva empresa, unidade comercializável, quantidade, origem, referência, usuário, motivo, chave de idempotência e custo unitário.
+`StockOperation` leva empresa, unidade comercializável, quantidade, origem, referência, usuário, motivo, chave de idempotência, custo unitário e, nas entradas de compra, o valor total da aquisição (`entryValue`), que alimenta o custo médio (`INVENTORY-COSTING.md`). Movimentações de origem `purchase` só são corrigidas em Compras.
 
 ## Estoque negativo
 
@@ -31,13 +31,14 @@ Sempre recusado. Para torná-lo configurável: ler a opção de `companies.setti
 
 | Necessidade | Onde estender |
 |---|---|
-| Custo médio ponderado | `unit_cost` já é gravado; Compras deve informá-lo em `StockOperation` e calcular a média |
 | Reserva | Nova tabela, sob o mesmo bloqueio; disponível = saldo − reservas |
 | Sincronização com canais | Evento emitido após o commit de `InventoryService::record` |
 
 ## Verificação de concorrência
 
 Em 25/11/2026, em MySQL, com processos simultâneos sobre a mesma unidade comercializável: 20 saídas de 1 com saldo 10 resultaram em 10 aceitas, 10 recusadas e saldo 0; 12 entradas com a mesma chave geraram 1 movimentação; 12 estornos do mesmo lançamento geraram 1 estorno. Saldo igual à soma das movimentações nos três casos. A suíte automatizada não repete esse teste, pois usa SQLite.
+
+Em 26/11/2026, em MariaDB 11.8 local (banco temporário), pelos serviços de Compras: 14 recebimentos simultâneos de 1 unidade em pedido de 10 resultaram em 10 aceitos e 4 recusados; 12 repetições simultâneas com a mesma chave geraram 1 recebimento; recebimentos simultâneos de pedidos diferentes do mesmo item resultaram no custo médio esperado (11,485275).
 
 ## Limitação
 

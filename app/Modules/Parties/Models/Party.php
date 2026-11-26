@@ -3,6 +3,7 @@
 namespace App\Modules\Parties\Models;
 
 use App\Modules\Customers\Models\CustomerProfile;
+use App\Modules\Purchases\Models\SupplierProfile;
 use App\Modules\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;
 use Database\Factories\Modules\Parties\Models\PartyFactory;
@@ -35,6 +36,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property-read CustomerProfile|null $customerProfile
+ * @property-read SupplierProfile|null $supplierProfile
  */
 class Party extends Model
 {
@@ -78,6 +80,12 @@ class Party extends Model
     public function customerProfile(): HasOne
     {
         return $this->hasOne(CustomerProfile::class);
+    }
+
+    /** @return HasOne<SupplierProfile, $this> */
+    public function supplierProfile(): HasOne
+    {
+        return $this->hasOne(SupplierProfile::class);
     }
 
     public function hasRole(string $role): bool

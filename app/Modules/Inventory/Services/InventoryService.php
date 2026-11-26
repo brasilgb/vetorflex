@@ -21,6 +21,8 @@ use Illuminate\Validation\ValidationException;
  */
 class InventoryService
 {
+    public function __construct(private AverageCostCalculator $costs) {}
+
     private const SCALE = 4;
 
     private const TRANSACTION_ATTEMPTS = 3;
@@ -51,6 +53,11 @@ class InventoryService
         }
 
         return $result;
+    }
+
+    public function averageCostOf(int $companyId, int $variantId): ?string
+    {
+        return InventoryBalance::query()->where('company_id', $companyId)->where('product_variant_id', $variantId)->first()?->average_cost;
     }
 
     public function recordInitial(StockOperation $operation): InventoryMovement
@@ -195,7 +202,10 @@ class InventoryService
             'occurred_at' => now(),
         ]);
 
-        $balance->forceFill(['quantity' => (string) $after->toScale(self::SCALE)])->save();
+        $balance->forceFill([
+            'quantity' => (string) $after->toScale(self::SCALE),
+            'average_cost' => $this->costs->apply($variant, $movement, $balance->average_cost, $operation->entryValue, $reversed),
+        ])->save();
 
         return $movement;
     }
@@ -267,6 +277,7 @@ class InventoryService
             $operation->referenceType,
             $operation->referenceId,
             $reversed?->id,
+            ...($operation->entryValue === null ? [] : [$operation->entryValue]),
         ]));
     }
 

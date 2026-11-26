@@ -5,6 +5,16 @@ namespace App\Modules\ModuleManager\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $id
+ * @property string $identifier
+ * @property string $name
+ * @property string|null $version
+ * @property string $development_status
+ * @property bool $commercially_available
+ * @property list<string>|null $dependencies
+ * @property list<array{key: string, label: string}>|null $permissions
+ */
 class PlatformModule extends Model
 {
     public const DEVELOPMENT = 'development';
