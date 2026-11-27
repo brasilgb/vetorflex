@@ -115,6 +115,7 @@ export type SaleOrderSummary = {
     number: number;
     status: Option;
     origin: Option;
+    origin_reference: string | null;
     customer: string | null;
     seller_name: string | null;
     order_date: string;

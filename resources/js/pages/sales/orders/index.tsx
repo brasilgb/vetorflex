@@ -207,9 +207,13 @@ export default function SaleOrders({
                                             #{order.number}
                                         </Link>
                                         <span className="block text-xs text-muted-foreground">
-                                            {order.is_quick
-                                                ? 'Venda rápida'
-                                                : order.origin.label}
+                                            {order.origin.value === 'pos'
+                                                ? [order.origin.label, order.origin_reference]
+                                                      .filter(Boolean)
+                                                      .join(' · ')
+                                                : order.is_quick
+                                                  ? 'Venda rápida'
+                                                  : order.origin.label}
                                         </span>
                                     </td>
                                     <td className="p-3">

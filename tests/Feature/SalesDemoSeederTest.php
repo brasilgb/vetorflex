@@ -18,6 +18,6 @@ test('the demo seed creates every sales scenario once, including a sales-only co
     expect(SaleQuote::query()->where('company_id', $demo->id)->pluck('status')->all())->toEqualCanonicalizing([SaleQuoteStatus::Issued, SaleQuoteStatus::Converted]);
     expect(SaleOrder::query()->where('company_id', $demo->id)->pluck('status')->map->value->sort()->values()->all())
         ->toBe(['cancelled', 'completed', 'confirmed', 'draft', 'fulfilled', 'partially_fulfilled']);
-    expect(SaleReturn::query()->count())->toBe(1);
+    expect(SaleReturn::query()->where('company_id', $demo->id)->count())->toBe(1);
     expect(SaleOrder::query()->where('company_id', $salesOnly->id)->sole())->status->toBe(SaleOrderStatus::Completed)->reserves_stock->toBeFalse();
 });

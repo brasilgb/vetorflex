@@ -1,165 +1,139 @@
-# OMNICHANNEL-06 — Resultado
+# OMNICHANNEL-07 — Resultado
 
-Data: 26/11/2026. Local: `gateway/vetorflex/`. Correio: SHA-256 `ed288873…`, seções 1 a 30. Detalhes do módulo em `docs/FINANCE.md`; resumo da etapa (inclusive RootAdmin) em `docs/OMNICHANNEL-06.md`.
+Data: 27/11/2026. Local: `gateway/vetorflex/`. Correio: seções 1 a 32. Detalhes do módulo em `docs/POS.md`; resumo da etapa em `docs/OMNICHANNEL-07.md`.
 
 ## Consolidação da etapa anterior
 
-- A OMNICHANNEL-05 está consolidada no commit `b54c891` (`feat: add sales module and inventory reservations`) do `.git-local` (`main`).
-- A estrutura `.git` / `.git-local` não foi unificada nem alterada. Não houve push nem deploy nesta etapa.
-- Parte do Financeiro (serviços, rotas, ouvintes, duas telas) já estava no diretório de trabalho no início desta sessão. Esse trabalho foi preservado, revisado por testes e concluído.
+- A OMNICHANNEL-06 está consolidada no commit `157b32c` (`feat: add finance module and platform admin panel`) do `.git-local` (`main`).
+- A estrutura `.git` / `.git-local` não foi unificada nem alterada. Não houve push nem deploy.
+- Parte do PDV (migrations, modelos, serviços, controladores, rotas, frente de caixa, comprovante e três arquivos de teste) já estava no diretório de trabalho no início desta sessão. Esse trabalho foi preservado, revisado por testes e concluído.
 
 ## Funcionalidades implementadas
 
-**Financeiro 1.0.0** (independente, comercializável sozinho):
+**PDV — Frente de Caixa 1.0.0** (`pos`, independente, comercializável sozinho):
 
-- Visão geral: previsto, realizado e vencido separados; filtros por período e conta; 12 meses; projeção de 30 dias; próximos vencimentos; despesas por categoria; saldo por conta.
-- Contas financeiras: seis tipos, saldo calculado pelo livro e ajuste de saldo justificado e com permissão.
-- Categorias e subcategorias, com sugestões iniciais editáveis e inativáveis.
-- Contas a receber e a pagar:
-  - lançamento manual, parcelamento e pessoa opcional (cadastro simplificado em `Parties`);
-  - baixas integrais e parciais com juros, multa e desconto;
-  - histórico, anexos, cancelamento, estorno e renegociação rastreável.
-- Livro de movimentações (entrada, saída, transferência, ajuste e estorno), somente leitura, com exportação CSV.
-- Transferências entre contas, fora do resultado, com estorno integral.
-- Recorrências semanais, mensais, trimestrais, semestrais e anuais: comando agendado idempotente, sem baixa automática.
-- Fluxo de caixa realizado e previsto, diário, semanal ou mensal, sem dupla contagem.
-- Conciliação manual por conta e período; desfazer exige motivo.
-- Oito relatórios com totais, CSV e PDF; caixa ou competência no relatório de receitas e despesas.
-- Integrações opcionais com Vendas e Compras, inclusive cancelamentos, devoluções, encerramento de saldo e restituições.
-- Importação assistida para ativação posterior, com prévia, seleção e baixa externa.
-- 19 permissões `finance.*`; menu Financeiro com 11 itens conforme as permissões.
+- Terminais com nome, identificação, localização, situação, largura do comprovante e operadores autorizados; vários caixas e operadores simultâneos, com sessões isoladas.
+- Abertura de caixa: terminal, operador, valor inicial, data e hora, observações e histórico. Uma sessão aberta por terminal; o saldo inicial não é receita.
+- Frente de caixa em tela cheia:
+  - busca rápida e leitor de código de barras (SKU, código interno, descrição);
+  - favoritos, quantidades fracionárias, preço, desconto e total por item, subtotal e total;
+  - cliente opcional com busca e cadastro simplificado (`PartyService`), item avulso e cadastro simplificado de produto;
+  - remoção, cancelamento, suspensão, recuperação e finalização, com atalhos (F2–F10, Ctrl+Enter) e alternativas por toque.
+- Finalização transacional e idempotente pelo serviço comercial compartilhado (`QuickSaleService`), com recálculo no servidor. Registra operador, terminal, sessão, origem PDV, itens, preços, descontos, cliente, pagamentos e referência.
+- Pagamentos manuais: dinheiro, Pix, crédito, débito, cheque, vale, boleto e outros. Pagamentos combinados com saldo restante, valor recebido e troco; recebido separado de a prazo; nada é apresentado como confirmado automaticamente.
+- Vendas suspensas sem efeito comercial, de estoque ou financeiro, revalidadas na recuperação e na finalização.
+- Sangria, suprimento e ajuste autorizado, com histórico imutável e fora de receitas e despesas.
+- Fechamento com resumo completo (saldo inicial, vendas, formas, sangrias, suprimentos, devoluções, cancelamentos, esperado, contado e divergência), justificativa obrigatória na divergência, fechamento cego opcional e correções posteriores somente por ajuste autorizado.
+- Cancelamentos e devoluções totais ou parciais pelo mecanismo de Vendas, com restituição identificada, reposição opcional ao estoque e autorização por supervisor.
+- Comprovante não fiscal: impressão no navegador em 58 e 80 mm, PDF e segunda via contada e auditada.
+- Relatórios: vendas por operador, terminal e período, ticket médio, formas de pagamento, produtos vendidos, cancelamentos, devoluções, divergências e histórico de sessões, com filtros e CSV, sem custo nem margem.
+- 15 permissões `pos.*`; menu PDV conforme as permissões.
+- Configurações: venda sem identificação, desconto máximo e autorização, alteração de preço, formas disponíveis, fechamento cego, impressão, cabeçalho e rodapé do comprovante e contas financeiras por forma (com o Financeiro).
+- Operação online com aviso de perda de conexão, carrinho preservado no navegador e reaproveitamento da chave de idempotência.
+- `PosDemoSeeder` com quatro empresas: somente PDV, PDV + Produtos, PDV + Vendas e PDV + Financeiro.
 
-**RootAdmin** (§30):
-
-- Comando `rootadmin:create`.
-- Middleware `root.admin` em todas as rotas `/rootadmin`.
-- Painel com visão geral real, empresas (cadastro, edição, suspensão e reativação), usuários, catálogo, administradores (revogação protegida), auditoria e configurações em consulta.
+**Concluído nesta sessão**: telas de terminais, sessões (lista, resumo, fechamento e correção), vendas do caixa (lista, detalhe, devolução e segunda via), relatórios e configurações (com favoritos); menu PDV; `PosDemoSeeder`; testes de telas, relatórios, comprovante, configurações, permissões e demonstração; correções abaixo; documentação.
 
 ## Decisões arquiteturais
 
-- Estrutura de títulos, baixas e livro com valores `decimal(15,2)` e `Brick\Math`. As chaves estrangeiras compostas `(company_id, id)` impedem vínculo entre empresas no banco.
-- "Vencido" é derivado do vencimento e do saldo em aberto, nunca gravado.
-- Integrações comerciais por eventos após o commit e contratos de leitura. O Financeiro só grava as próprias tabelas.
-  - Reduções do valor devido ajustam apenas saldos em aberto.
-  - Excesso já liquidado vira título de restituição explícito.
-  - Falhas não interrompem Vendas e Compras.
-- Venda parcialmente atendida: o título segue pelo total até o encerramento do saldo, quando o não atendido é ajustado, das últimas parcelas para as primeiras. O estorno do atendimento reconcilia novamente.
-- A importação assistida valida a seleção inteira antes de gravar e roda numa transação única. **Correção desta sessão:** antes, importava parcialmente quando um item da seleção era inválido.
-- RootAdmin sem domínio próprio: controladores em `RootAdmin`, cadastro só por console, revogação com trava e sem remover o último administrador.
-- O catálogo de módulos registra Financeiro como implementado 1.0.0, sem dependências e com integrações opcionais. Continua indisponível comercialmente até decisão do RootAdmin e não é ativado automaticamente.
+- O PDV não tem venda própria: `pos_sales` guarda o atendimento do caixa e aponta para a `SaleOrder` comercial. Vendas mostra a mesma venda, com origem, terminal, sessão e operador.
+- Regra de negócio separada da autorização comercial: os serviços de Vendas não verificam contratação; as rotas sim. O canal é passado pelo servidor (`SaleChannel`), nunca pela requisição.
+- Pagamentos combinados definidos depois do total calculado pelo servidor, numa etapa da mesma transação (`beforeConfirm` + `SaleOrderService::schedulePayment`).
+- Integração com o Financeiro somente por eventos e ouvinte do Financeiro (`SyncPosOperations`): títulos vêm de Vendas uma única vez, e só os valores recebidos recebem baixa. Sangrias e suprimentos viram transferências quando há contas configuradas. Sem Financeiro, o PDV mantém o próprio controle de caixa.
+- Operações sensíveis pelo `PosAuthorizer`: permissão própria, `pos.authorize` ou credenciais de supervisor, com tentativas limitadas e autorizador registrado.
+- Valores com `Brick\Math` e `decimal(15,2)`; chaves compostas `(company_id, id)`; travas `lockForUpdate` e chaves únicas por empresa para idempotência.
+- O PDV é registrado no catálogo como implementado 1.0.0, sem dependências; continua indisponível comercialmente e não é ativado nas empresas existentes.
+
+## Correções desta sessão
+
+- **Primeira via do comprovante**: era recusada a todo operador sem `pos.reprint`, porque a situação da sessão era comparada como texto e o Eloquent a devolve como enum (`PosSaleController::authorizeReceipt`).
+- PHPStan: 21 erros nos arquivos do PDV e 3 em recursos compartilhados alterados nesta etapa (`PaymentCondition`, `SaleDocumentBuilder`, `SaleOrderService`). As linhas dos relatórios passaram a ser normalizadas como texto.
+- TypeScript: 4 erros em `pages/pos/register.tsx` (tipos de `useHttp`).
+- `SalesDemoSeederTest` e `SalesPagesTest` contavam devoluções de todas as empresas; passaram a contar só as da "Empresa Demonstração".
 
 ## Migrations
 
-- `2026_11_27_100000_create_finance_tables`: 11 tabelas, aditiva.
-- **Correção:** um índice tinha nome de 65 caracteres e falhava no MySQL/MariaDB. Passou a ter nome explícito (`finance_movements_account_occurred_index`).
-- Aplicada ao banco local `new` (MariaDB 11.8). A primeira tentativa, com o nome antigo, criou dez tabelas e falhou. Essas tabelas, criadas nesta sessão e com dados de demonstração gerados minutos antes, foram removidas e a migration foi reaplicada sem erro.
-- Rodados `PlatformModuleSeeder` e `FinanceDemoSeeder` (este duas vezes, sem duplicar: 25 títulos, 8 baixas, 10 movimentações).
+- `2026_11_28_100000_add_origin_reference_to_sale_orders_table`: coluna aditiva.
+- `2026_11_28_100001_create_pos_tables`: 8 tabelas, aditiva.
+- Aplicadas ao banco local `new` (MariaDB) sem erro. Rodados `PlatformModuleSeeder` e `PosDemoSeeder` (este duas vezes, sem duplicar: 8 sessões, 20 vendas, 12 movimentações de caixa, 4 restituições).
 
 ## Arquivos relevantes
 
 - **Backend novo**:
-  - `app/Modules/Finance` (completado);
-  - `app/Http/Controllers/Finance`, `app/Http/Requests/Finance`;
-  - `routes/finance.php`, `config/finance.php`;
-  - `database/seeders/FinanceDemoSeeder.php`;
-  - `app/Console/Commands/CreateRootAdmin.php`, `app/Http/Middleware/EnsureRootAdmin.php`;
-  - `app/Http/Controllers/RootAdmin/{PlatformOverview,PlatformUser,Administrator,AuditLog,PlatformSettings}Controller.php`.
+  - `app/Modules/Pos`;
+  - `app/Http/Controllers/Pos`, `app/Http/Requests/Pos`, `routes/pos.php`;
+  - `app/Modules/Sales/Data/SaleChannel.php`;
+  - `app/Modules/Finance/Listeners/SyncPosOperations.php`, `app/Modules/Finance/Services/FinanceAccountDirectory.php`;
+  - `database/seeders/PosDemoSeeder.php`.
 - **Backend alterado**:
-  - `RootAdmin/CompanyController` (edição e situação);
-  - `AuditLog` (relações), `FinanceImportService` (atomicidade);
-  - `PlatformModuleSeeder`, `DatabaseSeeder`;
-  - `routes/web.php`, `bootstrap/app.php`;
-  - eventos e contratos de Vendas e Compras (`docs/OMNICHANNEL-06.md`).
+  - `QuickSaleService`, `SaleOrderService`, `SaleDocumentBuilder`, `SaleOrder`, `SalePresenter`;
+  - `PaymentCondition`, `PaymentMethod`;
+  - `AppServiceProvider`, `PlatformModuleSeeder`, `DatabaseSeeder`, `routes/web.php`.
 - **Front-end**:
-  - `pages/finance/{dashboard,accounts,movements,transfers,cash-flow,recurrences,reconciliation,reports,settings,import}.tsx`;
-  - `pages/root-admin/{overview,users,administrators,audit,settings}.tsx`, `companies.tsx` (reescrita);
-  - `types/platform.ts`, `app-sidebar.tsx`.
-- **Testes novos**: `FinanceTitleTest`, `FinanceCashTest`, `FinanceIntegrationTest`, `FinancePagesTest`, `FinanceDemoSeederTest`, `RootAdminPanelTest`. **Alterados**: `tests/Pest.php` (auxiliares) e `CompanyModuleTest` (Clientes como exemplo de módulo em desenvolvimento).
-- **Documentação**: `FINANCE.md` e `OMNICHANNEL-06.md` (novos); `ARCHITECTURE.md`, `MODULES.md` e `SALES.md` (atualizados).
+  - `pages/pos/{index,register,receipt,terminals,reports,settings}.tsx`;
+  - `pages/pos/sessions/{index,show}.tsx`, `pages/pos/sales/{index,show}.tsx`;
+  - `components/pos/*`, `lib/pos-cart.ts`, `types/pos.ts`;
+  - `app-sidebar.tsx` (menu PDV) e `pages/sales/orders/{index,show}.tsx` (origem).
+- **Testes**:
+  - novos: `PosCashSessionTest`, `PosCheckoutTest`, `PosIntegrationTest`, `PosPagesTest`, `PosDemoSeederTest`;
+  - alterados: `tests/Pest.php` (auxiliares), `SalesDemoSeederTest`, `SalesPagesTest`.
+- **Documentação**: `POS.md` e `OMNICHANNEL-07.md` (novos); `MODULES.md` e `ARCHITECTURE.md` (atualizados).
 
 ## Testes realizados
 
-| Verificação | Resultado |
-|---|---|
-| `php artisan test --compact` (SQLite), regressão final | 394 aprovados, 2 ignorados, 0 falhas (76 testes novos) |
-| Filtro `Finance` / `RootAdmin` | 82 aprovados |
-| Concorrência de baixas no MariaDB 11.8 (banco temporário, removido ao final) | 6 processos simultâneos de R$ 60 num título de R$ 100: 1 aceito, 5 recusados. 6 processos com a mesma chave: 1 baixa, a mesma devolvida aos 6 |
-| `npm run build` | Aprovado |
-| `tsc` | 19 erros, todos em arquivos do starter kit não alterados; nenhum nos arquivos desta etapa |
-| Pint | Aprovado |
-| PHPStan | 20 apontamentos antigos (o mesmo número da etapa anterior); nenhum nos arquivos desta etapa |
-| Migration e seed duplo no banco local | Aprovados, sem duplicidade |
-
-Os testes cobrem:
-
-- **Operação e cálculo**: operação só com Financeiro; parcelas com centavos na última; baixas parciais e integrais com juros, multa e desconto; limite ao saldo em aberto; idempotência e reutilização de chave.
-- **Histórico**: estorno compensatório; cancelamento que preserva o liquidado; vencido derivado; renegociação.
-- **Segurança**: isolamento entre empresas (404 e conta de outra empresa); permissões por operação e tipo; permissões de Vendas sem acesso ao Financeiro; anexos (tipo, isolamento e cabeçalhos).
-- **Contas e caixa**: contas e saldo calculado; ajuste com permissão e justificativa; transferências fora do resultado e estorno; recorrências idempotentes e encerradas; conciliação; fluxo de caixa sem dupla contagem; visão geral previsto × realizado × vencido.
-- **Integrações**: rascunho sem título; confirmação única; cancelamento com restituição; Vendas sem Financeiro; compra sem pagamento no recebimento; cancelamento de compra; importação assistida (prévia, rejeição atômica, idempotência e baixa externa); desativação do módulo.
-- **Telas e saídas**: todas as telas; oito relatórios em CSV e PDF; CSV contra fórmulas; seed idempotente.
-- **RootAdmin**: comando (sucesso, senha só numérica de 8 dígitos, e-mail existente, senha com menos de 8 caracteres e confirmação); redirecionamento após login; 403 para usuários empresariais; painel sem empresa; contagens reais; ciclo da empresa com auditoria; último administrador; nenhum acesso empresarial sem vínculo.
-
-## RootAdmin — entrega
-
-- **Cadastro inicial**: **pendente do proprietário.** O banco local não tem RootAdmin, e as credenciais não foram definidas por mim, como pede o correio. Para criar, execute `php artisan rootadmin:create` no terminal do projeto; o comando pede nome, e-mail e senha (mínimo de 8 caracteres; pode ser só números).
-- **Novos administradores**: o mesmo comando. O painel mostra a instrução e permite revogar acessos.
-- **URL**: `/login` e depois `/rootadmin` (no ambiente local, a `APP_URL` do `.env` seguida de `/rootadmin`).
-- **Funcionalidades disponíveis**:
-  - visão geral com contagens reais;
-  - empresas: cadastrar, editar, suspender e reativar, ativar e desativar módulos com dependências e integrações, consultar usuários;
-  - usuários e vínculos;
-  - catálogo e disponibilidade comercial;
-  - administradores;
-  - logs e auditoria;
-  - configurações em consulta;
-  - troca de senha em Configurações › Segurança.
-- **Pendentes**: configurações editáveis em tela, cadastro de administrador pelo painel, bloqueio individual de usuários e indicadores de faturamento (dependem de Billing).
-- **Redirecionamento após login**: verificado por teste. O RootAdmin vai para `/rootadmin` e o usuário empresarial, para `/dashboard`.
+- PDV: 40 testes, 595 asserções (`PosCashSessionTest`, `PosCheckoutTest`, `PosIntegrationTest`, `PosPagesTest`, `PosDemoSeederTest`). Cobrem:
+  - PDV independente, abertura e fechamento, sessões simultâneas e operadores;
+  - finalização idempotente, pagamentos combinados e troco;
+  - sangrias e suprimentos, venda suspensa, cancelamentos e devoluções;
+  - estoque e financeiro opcionais, ausência de venda duplicada;
+  - permissões, isolamento empresarial, telas, relatórios, CSV, comprovante, configurações e demonstração.
+- Regressão completa: **434 aprovados, 2 ignorados, 0 falhas** (436 testes, 3.323 asserções).
+- `npm run build` aprovado; `tsc --noEmit` sem erros; `vp check` sem erros (5 avisos de estilo em `lib/pos-cart.ts`).
+- PHPStan sem erros nos arquivos do PDV e nos compartilhados alterados. O projeto inteiro tem 20 erros, todos em arquivos de etapas anteriores e não alterados aqui (Clientes, Tenancy, `User`, `CompanyModule`, `PlatformModule`).
+- Pint aplicado.
 
 ## Limitações
 
-- Não houve teste em navegador (não há Chrome no ambiente). Telas, diálogos e responsividade foram verificados só por build, tipos e testes de servidor.
-- A concorrência foi medida no MariaDB 11.8 local, não no MySQL 8.4.
-- Sem integração bancária, OFX, Pix ou boletos (fora do escopo); a estrutura de conciliação já tem `external_reference`.
-- Por conta, o fluxo de caixa mostra só o realizado, porque títulos em aberto não têm conta definida.
-- Créditos de cliente não são compensados automaticamente: a restituição gera um título a pagar para decisão manual.
-- A edição de título não permite trocar o tipo; parcelas já geradas não são reprogramadas em bloco (use a renegociação).
+- Não houve teste em navegador (não há Chrome no ambiente). Telas, atalhos, leitor de código de barras, impressão térmica e responsividade foram verificados só por build, tipos e testes de servidor.
+- Sem NFC-e, NF-e, TEF, Pix integrado, adquirentes, balanças, gavetas automáticas, aplicativo nativo ou operação offline completa (fora do escopo).
+- Sem conexão, o carrinho fica só no navegador daquele terminal.
+- A restituição em dinheiro exige um caixa aberto do operador.
+- A concorrência não foi medida no MySQL 8.4.
 
 ## Pendências
 
-1. Cadastro do RootAdmin pelo proprietário (`php artisan rootadmin:create`).
-2. Homologação visual e de usabilidade em navegador, inclusive no celular.
-3. Verificação de concorrência no MySQL 8.4.
-4. Pendências anteriores: Compras ainda depende comercialmente de Produtos; Clientes ainda não usa `PartyService`; a configuração de venda sem identificação ainda não tem tela.
+1. Homologação visual e de uso em navegador, inclusive no celular e com leitor de código de barras e impressora térmica reais.
+2. Verificação de concorrência no MySQL 8.4.
+3. Pendências anteriores: cadastro do RootAdmin pelo proprietário (`php artisan rootadmin:create`); Compras ainda depende comercialmente de Produtos; Clientes ainda não usa `PartyService`; a configuração de venda sem identificação de Vendas ainda não tem tela; 20 erros antigos de PHPStan.
 
 ## Estado do Git
 
-- `.git-local` (`main`): OMNICHANNEL-05 em `b54c891`. Tudo da OMNICHANNEL-06 está no diretório de trabalho, **sem commit**.
-- `.git`: último commit `7ef80d4`. As OMNICHANNEL-05 e 06 estão sem commit ali.
+- `.git-local` (`main`): OMNICHANNEL-06 em `157b32c`. Tudo da OMNICHANNEL-07 está no diretório de trabalho, **sem commit**.
+- `.git`: último commit `7ef80d4`. As OMNICHANNEL-05, 06 e 07 estão sem commit ali.
 - Não versionados, como antes: `correio.md`, `pnpm-lock.yaml` e `yarn.lock`. Sem push, sem deploy e sem alteração em outros sistemas.
 
 ## Critérios de aceite
 
 | # | Critério | Situação |
 |---|---|---|
-| 1 | Financeiro funciona isoladamente | Atendido (teste só com Financeiro) |
-| 2 | Contas a pagar e receber operacionais | Atendido |
-| 3 | Baixas integrais e parciais | Atendido |
-| 4 | Estornos preservam o histórico | Atendido |
-| 5 | Saldos consistentes | Atendido (livro, sem saldo gravado) |
-| 6 | Transferências sem duplicar receitas e despesas | Atendido |
-| 7 | Fluxo realizado e previsto | Atendido |
-| 8 | Recorrências idempotentes | Atendido |
-| 9 | Integrações opcionais | Atendido (Vendas e Compras sem Financeiro) |
-| 10 | Cancelamentos e devoluções tratados | Atendido (ajustes e restituições) |
-| 11 | RootAdmin controla a habilitação | Atendido |
-| 12 | Permissões e isolamento | Atendido |
-| 13 | Relatórios com dados reais | Atendido |
-| 14 | Frontend funcional | Atendido por build e renderização; sem homologação em navegador |
-| 15 | Testes e build aprovados | Atendido |
-| 16 | Documentação atualizada | Atendido |
+| 1 | PDV funciona isoladamente | Atendido (teste só com PDV; Vendas, Financeiro e Produtos proibidos) |
+| 2 | Abertura e fechamento de caixa | Atendido |
+| 3 | Venda rápida operacional | Atendido |
+| 4 | Pagamentos combinados e troco | Atendido |
+| 5 | Sangrias e suprimentos rastreáveis | Atendido |
+| 6 | Vendas suspensas recuperáveis | Atendido |
+| 7 | Cancelamentos e devoluções | Atendido |
+| 8 | Estoque opcional | Atendido |
+| 9 | Financeiro opcional | Atendido |
+| 10 | Sem duplicidade de vendas | Atendido |
+| 11 | Comprovantes não fiscais | Atendido (58/80 mm, PDF, segunda via) |
+| 12 | RootAdmin controla a habilitação | Atendido |
+| 13 | Permissões e isolamento | Atendido |
+| 14 | Indicadores e relatórios | Atendido |
+| 15 | Interface responsiva e objetiva | Atendido por build e renderização; sem homologação em navegador |
+| 16 | Testes e build aprovados | Atendido |
+| 17 | Documentação atualizada | Atendido |
 
 ## Parecer técnico
 
-Os critérios 1 a 16 e a entrega do §30 estão atendidos e verificados por testes automatizados, build e migração real no MariaDB. Ficam duas ressalvas: as telas não foram observadas em navegador, e o cadastro do primeiro RootAdmin depende do proprietário. A próxima etapa (OMNICHANNEL-07) não foi iniciada.
+Os critérios 1 a 17 e a entrega do §32 estão atendidos e verificados por testes automatizados, build e migração real no MariaDB. Fica a ressalva de que as telas não foram observadas em navegador. A próxima etapa (OMNICHANNEL-08) não foi iniciada.

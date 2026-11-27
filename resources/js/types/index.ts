@@ -6,3 +6,4 @@ export type * from './purchases';
 export type * from './sales';
 export type * from './finance';
 export type * from './platform';
+export type * from './pos';

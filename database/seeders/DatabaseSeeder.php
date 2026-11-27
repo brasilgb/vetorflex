@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             PurchaseDemoSeeder::class,
             SalesDemoSeeder::class,
             FinanceDemoSeeder::class,
+            PosDemoSeeder::class,
         ]);
     }
 }

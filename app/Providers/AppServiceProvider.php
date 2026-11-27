@@ -2,8 +2,12 @@
 
 namespace App\Providers;
 
+use App\Modules\Finance\Listeners\SyncPosOperations;
 use App\Modules\Finance\Listeners\SyncPurchaseObligations;
 use App\Modules\Finance\Listeners\SyncSaleReceivables;
+use App\Modules\Pos\Events\PosCashMovementRecorded;
+use App\Modules\Pos\Events\PosRefundIssued;
+use App\Modules\Pos\Events\PosSaleCompleted;
 use App\Modules\Purchases\Contracts\PurchaseObligationSource;
 use App\Modules\Purchases\Events\PurchaseBalanceClosed;
 use App\Modules\Purchases\Events\PurchaseCancelled;
@@ -56,6 +60,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Event::listen([SaleConfirmed::class, SaleCancelled::class, SaleReturnRegistered::class, SaleBalanceClosed::class, SaleFulfillmentReversed::class], SyncSaleReceivables::class);
         Event::listen([PurchaseConfirmed::class, PurchaseCancelled::class, PurchaseReturnRegistered::class, PurchaseBalanceClosed::class, PurchaseReceiptReversed::class], SyncPurchaseObligations::class);
+        Event::listen([PosSaleCompleted::class, PosRefundIssued::class, PosCashMovementRecorded::class], SyncPosOperations::class);
     }
 
     /**

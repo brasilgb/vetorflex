@@ -9,6 +9,9 @@ use App\Modules\ModuleManager\Models\CompanyModule;
 use App\Modules\ModuleManager\Models\PlatformModule;
 use App\Modules\Parties\Models\Party;
 use App\Modules\Parties\Models\PartyRole;
+use App\Modules\Pos\Enums\PosPermission;
+use App\Modules\Pos\Models\PosSession;
+use App\Modules\Pos\Models\PosTerminal;
 use App\Modules\Products\Enums\ProductPermission;
 use App\Modules\Products\Enums\ProductType;
 use App\Modules\Products\Models\Product;
@@ -294,4 +297,59 @@ function settlementData(FinanceAccount $account, string $principal, array $overr
         'idempotency_key' => (string) Str::uuid(),
         ...$overrides,
     ];
+}
+
+/**
+ * Autentica um membro com o PDV habilitado e, quando pedidos, outros módulos (identificadores).
+ * Sem permissões informadas, é proprietário.
+ *
+ * @param  list<PosPermission|SalePermission|FinancePermission>|null  $permissions
+ * @param  list<string>  $alsoEnable
+ */
+function actingAsPosMember(Company $company, ?array $permissions = null, array $alsoEnable = [], ?User $user = null): User
+{
+    $user ??= User::factory()->create();
+    $user->companies()->syncWithoutDetaching([$company->id => [
+        'role' => $permissions === null ? 'owner' : 'operator',
+        'is_active' => true,
+        'permissions' => array_column($permissions ?? [], 'value'),
+    ]]);
+    $catalogs = [
+        'pos' => ['PDV', PosPermission::catalog(), []],
+        'finance' => ['Financeiro', FinancePermission::catalog(), []],
+        'sales' => ['Vendas', SalePermission::catalog(), []],
+        'products' => ['Produtos', ProductPermission::catalog(), []],
+    ];
+
+    foreach (['pos', ...$alsoEnable] as $identifier) {
+        [$name, $catalog, $dependencies] = $catalogs[$identifier];
+        $module = PlatformModule::query()->firstOrCreate(['identifier' => $identifier], ['name' => $name, 'description' => $name, 'dependencies' => $dependencies, 'permissions' => $catalog]);
+        CompanyModule::query()->firstOrCreate(['company_id' => $company->id, 'platform_module_id' => $module->id], ['activated_by' => $user->id, 'activated_at' => now()]);
+    }
+
+    test()->actingAs($user)->withSession(['active_company_id' => $company->id]);
+
+    return $user;
+}
+
+/** Terminal ativo e sessão aberta pelo usuário autenticado, com troco inicial. */
+function openPosSession(Company $company, string $openingAmount = '100.00', string $code = 'CX01'): PosSession
+{
+    $terminal = PosTerminal::query()->firstOrCreate(['company_id' => $company->id, 'code' => $code], ['name' => "Caixa {$code}", 'is_active' => true]);
+    test()->post("/pos/terminals/{$terminal->id}/open", ['opening_amount' => $openingAmount, 'idempotency_key' => (string) Str::uuid()])->assertSessionHasNoErrors();
+
+    return PosSession::query()->where('pos_terminal_id', $terminal->id)->where('status', 'open')->sole();
+}
+
+/**
+ * Dados de finalização no caixa.
+ *
+ * @param  list<array<string, mixed>>  $items
+ * @param  list<array<string, mixed>>  $payments
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function posCart(array $items, array $payments, array $overrides = []): array
+{
+    return ['items' => $items, 'payments' => $payments, 'idempotency_key' => (string) Str::uuid(), ...$overrides];
 }

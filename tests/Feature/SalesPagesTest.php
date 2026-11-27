@@ -36,7 +36,7 @@ test('every sales page renders for the demo company', function () {
         $this->get($path)->assertOk()->assertInertia(fn (AssertableInertia $page) => $page->component($component));
     }
 
-    foreach (["/sales/quotes/{$quote->id}/document", '/sales/returns/'.SaleReturn::query()->sole()->id.'/document', '/sales/fulfillments/'.SaleFulfillment::query()->first()->id.'/document'] as $path) {
+    foreach (["/sales/quotes/{$quote->id}/document", '/sales/returns/'.SaleReturn::query()->where('company_id', $company->id)->sole()->id.'/document', '/sales/fulfillments/'.SaleFulfillment::query()->where('company_id', $company->id)->first()->id.'/document'] as $path) {
         expect($this->get($path)->assertOk()->getContent())->toStartWith('%PDF-1.4');
     }
 });

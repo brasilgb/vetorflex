@@ -60,7 +60,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class SaleOrder extends Model
 {
-    protected $fillable = ['company_id', 'number', 'status', 'origin', 'sale_quote_id', 'external_reference', 'customer_party_id', 'customer_snapshot', 'seller_id', 'seller_name', 'user_id', 'user_name', 'order_date', 'expected_date', 'delivery_method', 'delivery_address', 'items_total', 'discount', 'freight', 'other_costs', 'total', 'payment_condition', 'payment_method', 'payment_notes', 'commercial_terms', 'notes', 'internal_notes', 'is_quick', 'reserves_stock', 'idempotency_key', 'request_hash', 'confirmed_at', 'completed_at', 'balance_closed_at'];
+    protected $fillable = ['company_id', 'number', 'status', 'origin', 'origin_reference', 'sale_quote_id', 'external_reference', 'customer_party_id', 'customer_snapshot', 'seller_id', 'seller_name', 'user_id', 'user_name', 'order_date', 'expected_date', 'delivery_method', 'delivery_address', 'items_total', 'discount', 'freight', 'other_costs', 'total', 'payment_condition', 'payment_method', 'payment_notes', 'commercial_terms', 'notes', 'internal_notes', 'is_quick', 'reserves_stock', 'idempotency_key', 'request_hash', 'confirmed_at', 'completed_at', 'balance_closed_at'];
 
     protected $attributes = ['items_total' => '0', 'discount' => '0', 'freight' => '0', 'other_costs' => '0', 'total' => '0', 'payment_condition' => 'undefined', 'origin' => 'direct', 'delivery_method' => 'pickup', 'is_quick' => false, 'reserves_stock' => false];
 

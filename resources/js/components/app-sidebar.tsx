@@ -3,6 +3,7 @@ import {
     KeyRound,
     LayoutGrid,
     Package,
+    Store,
     Receipt,
     ShieldCheck,
     ShoppingCart,
@@ -35,6 +36,11 @@ import { index as recurrences } from '@/routes/finance/recurrences';
 import { index as financeReports } from '@/routes/finance/reports';
 import { index as financeTitles } from '@/routes/finance/titles';
 import { index as financeTransfers } from '@/routes/finance/transfers';
+import { home as posHome, settings as posSettings } from '@/routes/pos';
+import { index as posReports } from '@/routes/pos/reports';
+import { index as posSales } from '@/routes/pos/sales';
+import { index as posSessions } from '@/routes/pos/sessions';
+import { index as posTerminals } from '@/routes/pos/terminals';
 import { index as products } from '@/routes/products';
 import { index as brands } from '@/routes/products/brands';
 import { index as categories } from '@/routes/products/categories';
@@ -156,6 +162,49 @@ export function AppSidebar() {
                   },
               ]
             : []),
+        ...(tenant.can('pos.operate')
+            ? [
+                  {
+                      title: 'PDV',
+                      href: posHome(),
+                      icon: Store,
+                      items: [
+                          {
+                              permission: 'pos.operate',
+                              title: 'Frente de caixa',
+                              href: posHome(),
+                          },
+                          {
+                              permission: 'pos.view_sessions',
+                              title: 'Sessões de caixa',
+                              href: posSessions(),
+                          },
+                          {
+                              permission: 'pos.view_sessions',
+                              title: 'Vendas do caixa',
+                              href: posSales(),
+                          },
+                          {
+                              permission: 'pos.view_reports',
+                              title: 'Relatórios',
+                              href: posReports(),
+                          },
+                          {
+                              permission: 'pos.manage_terminals',
+                              title: 'Terminais',
+                              href: posTerminals(),
+                          },
+                          {
+                              permission: 'pos.manage_settings',
+                              title: 'Configurações',
+                              href: posSettings(),
+                          },
+                      ]
+                          .filter(({ permission }) => tenant.can(permission))
+                          .map(({ title, href }) => ({ title, href })),
+                  },
+              ]
+            : []),
         ...(tenant.hasModule('finance')
             ? [
                   {
@@ -163,17 +212,61 @@ export function AppSidebar() {
                       href: finance(),
                       icon: Wallet,
                       items: [
-                          { permission: 'finance.view_dashboard', title: 'Visão geral', href: finance() },
-                          { permission: 'finance.view_receivables', title: 'Contas a receber', href: financeTitles('receivables') },
-                          { permission: 'finance.view_payables', title: 'Contas a pagar', href: financeTitles('payables') },
-                          { permission: 'finance.view_accounts', title: 'Movimentações', href: financeMovements() },
-                          { permission: 'finance.view_accounts', title: 'Contas financeiras', href: financeAccounts() },
-                          { permission: 'finance.view_accounts', title: 'Transferências', href: financeTransfers() },
-                          { permission: 'finance.view_reports', title: 'Fluxo de caixa', href: cashFlow() },
-                          { permission: 'finance.manage_recurrences', title: 'Recorrências', href: recurrences() },
-                          { permission: 'finance.reconcile', title: 'Conciliação', href: reconciliation() },
-                          { permission: 'finance.view_reports', title: 'Relatórios', href: financeReports() },
-                          { permission: 'finance.manage_categories', title: 'Configurações', href: financeSettings() },
+                          {
+                              permission: 'finance.view_dashboard',
+                              title: 'Visão geral',
+                              href: finance(),
+                          },
+                          {
+                              permission: 'finance.view_receivables',
+                              title: 'Contas a receber',
+                              href: financeTitles('receivables'),
+                          },
+                          {
+                              permission: 'finance.view_payables',
+                              title: 'Contas a pagar',
+                              href: financeTitles('payables'),
+                          },
+                          {
+                              permission: 'finance.view_accounts',
+                              title: 'Movimentações',
+                              href: financeMovements(),
+                          },
+                          {
+                              permission: 'finance.view_accounts',
+                              title: 'Contas financeiras',
+                              href: financeAccounts(),
+                          },
+                          {
+                              permission: 'finance.view_accounts',
+                              title: 'Transferências',
+                              href: financeTransfers(),
+                          },
+                          {
+                              permission: 'finance.view_reports',
+                              title: 'Fluxo de caixa',
+                              href: cashFlow(),
+                          },
+                          {
+                              permission: 'finance.manage_recurrences',
+                              title: 'Recorrências',
+                              href: recurrences(),
+                          },
+                          {
+                              permission: 'finance.reconcile',
+                              title: 'Conciliação',
+                              href: reconciliation(),
+                          },
+                          {
+                              permission: 'finance.view_reports',
+                              title: 'Relatórios',
+                              href: financeReports(),
+                          },
+                          {
+                              permission: 'finance.manage_categories',
+                              title: 'Configurações',
+                              href: financeSettings(),
+                          },
                       ]
                           .filter(({ permission }) => tenant.can(permission))
                           .map(({ title, href }) => ({ title, href })),

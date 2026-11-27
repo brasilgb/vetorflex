@@ -11,6 +11,7 @@ enum PaymentMethod: string
     case DebitCard = 'debit_card';
     case Transfer = 'transfer';
     case Cheque = 'cheque';
+    case Voucher = 'voucher';
     case Other = 'other';
 
     public function label(): string
@@ -23,6 +24,7 @@ enum PaymentMethod: string
             self::DebitCard => 'Cartão de débito',
             self::Transfer => 'Transferência',
             self::Cheque => 'Cheque',
+            self::Voucher => 'Vale',
             self::Other => 'Outros',
         };
     }

@@ -4,11 +4,13 @@ namespace App\Modules\Sales\Services;
 
 use App\Models\User;
 use App\Modules\Core\Commerce\CommercialMath;
+use App\Modules\Core\Commerce\PaymentCondition;
 use App\Modules\Core\Commerce\PaymentSchedule;
 use App\Modules\Core\Services\AuditService;
 use App\Modules\Core\Services\SequenceService;
 use App\Modules\Inventory\Services\InventoryReservationService;
 use App\Modules\Sales\Data\SaleAbilities;
+use App\Modules\Sales\Data\SaleChannel;
 use App\Modules\Sales\Enums\SaleOrderStatus;
 use App\Modules\Sales\Enums\SaleOrigin;
 use App\Modules\Sales\Events\SaleBalanceClosed;
@@ -48,14 +50,17 @@ class SaleOrderService
         private AuditService $audit,
     ) {}
 
-    /** @param array<string, mixed> $data */
-    public function create(Company $company, User $user, array $data, SaleAbilities $abilities, bool $isQuick = false): SaleOrder
+    /**
+     * @param  array<string, mixed>  $data
+     * @param  SaleChannel|null  $channel  Origem definida pelo servidor (PDV, loja virtual, integração). Sem ele, venda direta.
+     */
+    public function create(Company $company, User $user, array $data, SaleAbilities $abilities, bool $isQuick = false, ?SaleChannel $channel = null): SaleOrder
     {
         $key = $data['idempotency_key'] ?? null;
         $hash = Idempotency::hash($data);
 
         try {
-            return DB::transaction(function () use ($company, $user, $data, $abilities, $isQuick, $key, $hash): SaleOrder {
+            return DB::transaction(function () use ($company, $user, $data, $abilities, $isQuick, $key, $hash, $channel): SaleOrder {
                 $existing = $this->existing($company, $key, $hash);
 
                 if ($existing !== null) {
@@ -66,14 +71,15 @@ class SaleOrderService
                     'company_id' => $company->id,
                     'number' => $this->sequences->next($company, 'sale_order'),
                     'status' => SaleOrderStatus::Draft,
-                    'origin' => SaleOrigin::Direct,
+                    'origin' => $channel->origin ?? SaleOrigin::Direct,
+                    'origin_reference' => $channel?->reference,
                     'user_id' => $user->id,
                     'user_name' => $user->name,
                     'is_quick' => $isQuick,
                     'idempotency_key' => $key,
                     'request_hash' => $key === null ? null : $hash,
                 ]);
-                $this->builder->fill($company, $order, $user, $data, $abilities);
+                $this->builder->fill($company, $order, $user, $data, $abilities, $channel);
                 $this->history->record($order, null, SaleOrderStatus::Draft->value, $user, $isQuick ? 'Venda rápida.' : null);
                 $this->audit->record('sales.order_created', $company, $user, $order, ['number' => $order->number]);
 
@@ -98,6 +104,28 @@ class SaleOrderService
             $this->audit->record('sales.order_updated', $order->company, $user, $order, ['number' => $order->number]);
 
             return $order;
+        }, self::TRANSACTION_ATTEMPTS);
+    }
+
+    /**
+     * Define a condição e os vencimentos de uma venda em rascunho a partir do total já calculado pelo servidor. Usado por
+     * canais que só conhecem o pagamento depois do total (PDV com pagamentos combinados).
+     *
+     * @param  list<array{due_date: string, amount: string, method?: string|null}>  $installments
+     */
+    public function schedulePayment(SaleOrder $order, PaymentCondition $condition, ?string $method, array $installments): SaleOrder
+    {
+        return DB::transaction(function () use ($order, $condition, $method, $installments): SaleOrder {
+            $order = $this->lock($order);
+
+            if ($order->status !== SaleOrderStatus::Draft) {
+                throw ValidationException::withMessages(['status' => 'Somente vendas em rascunho aceitam nova condição de pagamento.']);
+            }
+
+            $order->update(['payment_condition' => $condition, 'payment_method' => $method]);
+            $this->builder->schedule($order, $installments, $order->order_date->format('Y-m-d'));
+
+            return $order->refresh();
         }, self::TRANSACTION_ATTEMPTS);
     }
 

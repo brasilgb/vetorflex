@@ -4,10 +4,12 @@ namespace App\Modules\Sales\Services;
 
 use App\Models\User;
 use App\Modules\Sales\Data\SaleAbilities;
+use App\Modules\Sales\Data\SaleChannel;
 use App\Modules\Sales\Enums\SaleOrderStatus;
 use App\Modules\Sales\Models\SaleOrder;
 use App\Modules\Sales\Models\SaleOrderItem;
 use App\Modules\Tenancy\Models\Company;
+use Closure;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 
@@ -22,15 +24,24 @@ class QuickSaleService
         private SaleFulfillmentService $fulfillments,
     ) {}
 
-    /** @param array<string, mixed> $data */
-    public function register(Company $company, User $user, array $data, SaleAbilities $abilities): SaleOrder
+    /**
+     * @param  array<string, mixed>  $data
+     * @param  SaleChannel|null  $channel  Origem definida pelo servidor; sem ela, venda direta.
+     * @param  (Closure(SaleOrder): SaleOrder)|null  $beforeConfirm  Etapa do canal entre o cálculo do total e a confirmação
+     *                                                               (por exemplo, o PDV define os pagamentos combinados).
+     */
+    public function register(Company $company, User $user, array $data, SaleAbilities $abilities, ?SaleChannel $channel = null, ?Closure $beforeConfirm = null): SaleOrder
     {
         try {
-            return DB::transaction(function () use ($company, $user, $data, $abilities): SaleOrder {
-                $order = $this->orders->create($company, $user, $data, $abilities, isQuick: true);
+            return DB::transaction(function () use ($company, $user, $data, $abilities, $channel, $beforeConfirm): SaleOrder {
+                $order = $this->orders->create($company, $user, $data, $abilities, isQuick: true, channel: $channel);
 
                 if ($order->status !== SaleOrderStatus::Draft) {
                     return $order;
+                }
+
+                if ($beforeConfirm !== null) {
+                    $order = $beforeConfirm($order);
                 }
 
                 $order = $this->orders->confirm($order, $user);

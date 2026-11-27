@@ -10,6 +10,7 @@ use App\Modules\Products\Enums\ProductType;
 use App\Modules\Products\Models\ProductVariant;
 use App\Modules\Products\Services\ProductCatalog;
 use App\Modules\Sales\Data\SaleAbilities;
+use App\Modules\Sales\Data\SaleChannel;
 use App\Modules\Sales\Enums\DeliveryMethod;
 use App\Modules\Sales\Models\SaleOrder;
 use App\Modules\Sales\Models\SaleOrderItem;
@@ -38,10 +39,10 @@ class SaleDocumentBuilder
     ) {}
 
     /** @param array<string, mixed> $data */
-    public function fill(Company $company, SaleQuote|SaleOrder $document, User $user, array $data, SaleAbilities $abilities): void
+    public function fill(Company $company, SaleQuote|SaleOrder $document, User $user, array $data, SaleAbilities $abilities, ?SaleChannel $channel = null): void
     {
         $isOrder = $document instanceof SaleOrder;
-        $this->fillCustomer($company, $document, $data, $isOrder);
+        $this->fillCustomer($company, $document, $data, $isOrder, $channel->allowsAnonymousCustomer ?? $this->allowsAnonymous($company));
         $this->fillSeller($company, $document, $user, $data);
         $date = $isOrder ? 'order_date' : 'issue_date';
 
@@ -70,9 +71,19 @@ class SaleDocumentBuilder
         $total = $itemsTotal->minus($document->discount)->plus($document->freight)->plus($document->other_costs);
         $document->update(['items_total' => CommercialMath::money($itemsTotal), 'total' => CommercialMath::money($total)]);
 
-        $schedule = PaymentSchedule::build($document->payment_condition, $document->payment_method?->value, $data['installments'] ?? [], $document->total, (string) $data[$date]);
+        $this->schedule($document, $data['installments'] ?? [], (string) $data[$date]);
+    }
+
+    /**
+     * Recria os vencimentos pela condição e forma gravadas no documento; a soma precisa ser igual ao total calculado.
+     *
+     * @param  list<array{due_date: string, amount: string, method?: string|null}>  $installments
+     */
+    public function schedule(SaleQuote|SaleOrder $document, array $installments, string $date): void
+    {
+        $schedule = PaymentSchedule::build($document->payment_condition, $document->payment_method?->value, $installments, $document->total, $date);
         $document->paymentSchedules()->delete();
-        $document->paymentSchedules()->createMany(array_map(fn (array $row): array => [...$row, 'company_id' => $company->id], $schedule));
+        $document->paymentSchedules()->createMany(array_map(fn (array $row): array => [...$row, 'company_id' => $document->company_id], $schedule));
     }
 
     /**
@@ -91,13 +102,13 @@ class SaleDocumentBuilder
     }
 
     /** @param array<string, mixed> $data */
-    private function fillCustomer(Company $company, SaleQuote|SaleOrder $document, array $data, bool $isOrder): void
+    private function fillCustomer(Company $company, SaleQuote|SaleOrder $document, array $data, bool $isOrder, bool $allowsAnonymous): void
     {
         $partyId = isset($data['customer_party_id']) ? (int) $data['customer_party_id'] : null;
         $method = $isOrder ? DeliveryMethod::from($data['delivery_method'] ?? DeliveryMethod::Pickup->value) : null;
 
         if ($partyId === null) {
-            if (! $this->allowsAnonymous($company)) {
+            if (! $allowsAnonymous) {
                 throw ValidationException::withMessages(['customer_party_id' => 'Selecione o cliente.']);
             }
 

@@ -62,6 +62,7 @@ class SalePresenter
             'number' => $order->number,
             'status' => ['value' => $order->status->value, 'label' => $order->status->label()],
             'origin' => ['value' => $order->origin->value, 'label' => $order->origin->label()],
+            'origin_reference' => $order->origin_reference,
             'customer' => $order->customer_snapshot['name'] ?? null,
             'seller_name' => $order->seller_name,
             'order_date' => $order->order_date->format('Y-m-d'),

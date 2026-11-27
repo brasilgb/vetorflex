@@ -92,9 +92,13 @@ export default function SaleOrderShow({
                         ['Previsão', formatDate(order.expected_date)],
                         [
                             'Origem',
-                            order.is_quick
-                                ? 'Venda rápida'
-                                : order.origin.label,
+                            order.origin.value === 'pos'
+                                ? [order.origin.label, order.origin_reference]
+                                      .filter(Boolean)
+                                      .join(' · ')
+                                : order.is_quick
+                                  ? 'Venda rápida'
+                                  : order.origin.label,
                         ],
                         [
                             'Orçamento',

@@ -13,6 +13,9 @@ enum PaymentCondition: string
     case Installments = 'installments';
     case EntryInstallments = 'entry_installments';
 
+    /** Várias formas de pagamento no mesmo documento (PDV). Não aparece nas opções dos formulários. */
+    case Combined = 'combined';
+
     public function label(): string
     {
         return match ($this) {
@@ -21,6 +24,7 @@ enum PaymentCondition: string
             self::Term => 'A prazo',
             self::Installments => 'Parcelado',
             self::EntryInstallments => 'Entrada mais parcelas',
+            self::Combined => 'Pagamento combinado',
         };
     }
 
@@ -31,12 +35,13 @@ enum PaymentCondition: string
             self::Undefined => [0, 0],
             self::Cash, self::Term => [1, 1],
             self::Installments, self::EntryInstallments => [2, 60],
+            self::Combined => [2, 10],
         };
     }
 
     /** @return list<array{value: string, label: string}> */
     public static function options(): array
     {
-        return array_map(fn (self $condition): array => ['value' => $condition->value, 'label' => $condition->label()], self::cases());
+        return array_map(fn (self $condition): array => ['value' => $condition->value, 'label' => $condition->label()], [self::Undefined, self::Cash, self::Term, self::Installments, self::EntryInstallments]);
     }
 }
