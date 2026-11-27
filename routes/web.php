@@ -2,11 +2,13 @@
 
 use App\Http\Controllers\Company\CompanyMemberController;
 use App\Http\Controllers\Customers\CustomerController;
+use App\Http\Controllers\Fiscal\FiscalWebhookController;
 use App\Http\Controllers\Payments\PaymentWebhookController;
 use App\Http\Controllers\RootAdmin\AdministratorController;
 use App\Http\Controllers\RootAdmin\AuditLogController;
 use App\Http\Controllers\RootAdmin\CompanyController;
 use App\Http\Controllers\RootAdmin\CompanyModuleController;
+use App\Http\Controllers\RootAdmin\FiscalAdminController;
 use App\Http\Controllers\RootAdmin\ModuleCatalogController;
 use App\Http\Controllers\RootAdmin\PaymentsAdminController;
 use App\Http\Controllers\RootAdmin\PlatformOverviewController;
@@ -39,6 +41,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     require __DIR__.'/pos.php';
     require __DIR__.'/inventory.php';
     require __DIR__.'/payments.php';
+    require __DIR__.'/fiscal.php';
 
     Route::middleware('tenant')->group(function (): void {
         Route::get('company/members', [CompanyMemberController::class, 'index'])->name('company.members.index');
@@ -62,6 +65,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::patch('modules/{module}', [ModuleCatalogController::class, 'update'])->name('modules.update');
         Route::get('payments', [PaymentsAdminController::class, 'index'])->name('payments.index');
         Route::patch('payments/providers/{provider}', [PaymentsAdminController::class, 'update'])->name('payments.providers.update');
+        Route::get('fiscal', [FiscalAdminController::class, 'index'])->name('fiscal.index');
+        Route::patch('fiscal/providers/{provider}', [FiscalAdminController::class, 'update'])->name('fiscal.providers.update');
+        Route::post('fiscal/providers/{provider}/test', [FiscalAdminController::class, 'test'])->name('fiscal.providers.test');
+        Route::post('fiscal/providers/{provider}/webhook', [FiscalAdminController::class, 'webhook'])->name('fiscal.providers.webhook');
+        Route::patch('fiscal/companies/{setting}/release', [FiscalAdminController::class, 'release'])->name('fiscal.companies.release');
     });
 });
 
@@ -72,3 +80,9 @@ Route::post('webhooks/payments/{provider}/{token}/{suffix?}', PaymentWebhookCont
     ->where(['provider' => '[a-z]+', 'token' => '[A-Za-z0-9]{48}', 'suffix' => 'pix'])
     ->middleware('throttle:120,1')
     ->name('payments.webhook');
+
+// Notificações de provedores fiscais (conta da plataforma; sem sessão, sem CSRF), autenticadas pela assinatura.
+Route::post('webhooks/fiscal/{provider}', FiscalWebhookController::class)
+    ->where(['provider' => '[a-z]+'])
+    ->middleware('throttle:240,1')
+    ->name('fiscal.webhook');

@@ -13,16 +13,16 @@ Cobranças Pix emitidas pela conta da própria empresa no provedor, com link e Q
 
 `app/Modules/Payments`: `Data`, `Enums`, `Events`, `Jobs`, `Models`, `Providers`, `Services`, `Support`. Controladores em `app/Http/Controllers/Payments`, rotas em `routes/payments.php` (`/payments`) e `POST /webhooks/payments/{provider}/{token}[/pix]`, configuração em `config/payments.php`, telas em `resources/js/pages/payments`.
 
-| Tabela | Conteúdo |
-|---|---|
-| `payment_providers` | Provedores implementados e a disponibilidade decidida pelo RootAdmin. |
-| `payment_provider_accounts` | Conta da empresa por provedor e ambiente: credenciais e token do webhook criptografados (`encrypted`), chave Pix, formas, validade do Pix, conta financeira, situação e última falha (sem segredos). |
-| `payment_charges` | Cobranças: valores `decimal(15,2)`, situação interna, situação do provedor, pagador, origem, txid, Pix copia e cola, QR Code, link, idempotência e `active_origin_key` (uma cobrança aberta por origem). |
-| `payment_charge_events` | Histórico imutável da cobrança. |
-| `payment_transactions` | Pagamentos confirmados pelo provedor, únicos por identificador (`endToEndId`). Bruto, taxa, líquido e devolvido. |
-| `payment_refunds` | Devoluções solicitadas e o resultado informado pelo provedor. |
-| `payment_webhook_events` | Notificações recebidas, gravadas antes do processamento (conteúdo idêntico uma vez por conta). |
-| `pos_payments` (colunas novas) | `payment_charge_id` (único) e `is_provider_confirmed`. |
+| Tabela                         | Conteúdo                                                                                                                                                                                                 |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `payment_providers`            | Provedores implementados e a disponibilidade decidida pelo RootAdmin.                                                                                                                                    |
+| `payment_provider_accounts`    | Conta da empresa por provedor e ambiente: credenciais e token do webhook criptografados (`encrypted`), chave Pix, formas, validade do Pix, conta financeira, situação e última falha (sem segredos).     |
+| `payment_charges`              | Cobranças: valores `decimal(15,2)`, situação interna, situação do provedor, pagador, origem, txid, Pix copia e cola, QR Code, link, idempotência e `active_origin_key` (uma cobrança aberta por origem). |
+| `payment_charge_events`        | Histórico imutável da cobrança.                                                                                                                                                                          |
+| `payment_transactions`         | Pagamentos confirmados pelo provedor, únicos por identificador (`endToEndId`). Bruto, taxa, líquido e devolvido.                                                                                         |
+| `payment_refunds`              | Devoluções solicitadas e o resultado informado pelo provedor.                                                                                                                                            |
+| `payment_webhook_events`       | Notificações recebidas, gravadas antes do processamento (conteúdo idêntico uma vez por conta).                                                                                                           |
+| `pos_payments` (colunas novas) | `payment_charge_id` (único) e `is_provider_confirmed`.                                                                                                                                                   |
 
 ## Estados
 
@@ -63,28 +63,28 @@ Boleto e cartão (API de Cobranças da Efí) não foram implementados e não sã
 5. Falhas ficam registradas e podem ser reprocessadas por quem tem `payments.reprocess`.
 6. A conciliação periódica (`payments:reconcile`, a cada 15 min, sem sobreposição) consulta as cobranças em aberto dos últimos 60 dias e marca as vencidas. Funciona mesmo sem webhook registrado.
 
-**mTLS na Efí**: a Efí exige TLS mútuo no servidor que recebe o webhook (ela recusa o registro sem ele). Isso é configurado no servidor web, fora da aplicação: aceitar o certificado de cliente da Efí com a cadeia pública `https://certificados.efipay.com.br/webhooks/certificate-chain-prod.crt` (produção) ou `...-homolog.crt` (homologação), com TLS 1.2 ou superior. Sem isso, o registro do webhook falha e a confirmação depende da conciliação periódica.
+**mTLS na Efí**: por padrão a Efí exige TLS mútuo no servidor que recebe o webhook. O registro (`PUT /v2/webhook/{chave}`) é feito com o cabeçalho `x-skip-mtls-checking: true`, prática da integração em produção do VetorOS (OMNICHANNEL-10), para não depender de mTLS no servidor web. Nesse modo a origem é autenticada pelo token secreto da URL, pela lista opcional de IPs (`payments.webhooks.allowed_ips`) e, sobretudo, pela consulta da cobrança na API antes de qualquer confirmação: o conteúdo do webhook nunca confirma pagamento sozinho. Quem preferir mTLS pode configurá-lo no servidor web com a cadeia pública da Efí (`https://certificados.efipay.com.br/webhooks/certificate-chain-prod.crt` ou `...-homolog.crt`).
 
 ## Integrações
 
 - **Vendas**:
-  - cobrança a partir de uma venda confirmada, pelo saldo devido (total menos o já recebido por cobranças);
-  - uma cobrança aberta por venda;
-  - a ficha da venda mostra as cobranças e o botão "Gerar cobrança do saldo", só com Pagamentos contratado e permissão.
-  - Vendas funciona igual sem Pagamentos.
+    - cobrança a partir de uma venda confirmada, pelo saldo devido (total menos o já recebido por cobranças);
+    - uma cobrança aberta por venda;
+    - a ficha da venda mostra as cobranças e o botão "Gerar cobrança do saldo", só com Pagamentos contratado e permissão.
+    - Vendas funciona igual sem Pagamentos.
 - **Financeiro** (`SyncPaymentOperations`, ouvinte do Financeiro):
-  - cobrança a partir de conta a receber (saldo em aberto);
-  - com pagamento confirmado, baixa os títulos da venda ou o título de origem, na conta financeira da conta do provedor, com chave `payment-transaction:{id}:title:{título}`, sem baixa duplicada;
-  - na devolução confirmada, estorna essas baixas e baixa de novo o valor que restou;
-  - sem conta financeira configurada, nada é baixado;
-  - cobranças avulsas não criam títulos;
-  - cobranças do PDV não passam por aqui (a baixa é da integração do PDV), para não duplicar receita.
+    - cobrança a partir de conta a receber (saldo em aberto);
+    - com pagamento confirmado, baixa os títulos da venda ou o título de origem, na conta financeira da conta do provedor, com chave `payment-transaction:{id}:title:{título}`, sem baixa duplicada;
+    - na devolução confirmada, estorna essas baixas e baixa de novo o valor que restou;
+    - sem conta financeira configurada, nada é baixado;
+    - cobranças avulsas não criam títulos;
+    - cobranças do PDV não passam por aqui (a baixa é da integração do PDV), para não duplicar receita.
 - **PDV** (`PosPix`, `PosPixController`):
-  - Pix dinâmico gerado no caixa, com terminal, sessão e operador nos metadados, um Pix aberto por carrinho e consulta ao provedor a cada 3 s enquanto aguarda;
-  - a venda só aceita `payment_charge_id` se a cobrança for do PDV desta empresa, estiver **paga** segundo o provedor, tiver o mesmo valor e não tiver sido usada (coluna única);
-  - o pagamento fica com `is_provider_confirmed`; gerar o QR Code não confirma nada;
-  - expiração, falha e cancelamento liberam a linha; Pix pago depois de o atendimento ser abandonado aparece na conciliação para devolução ou conferência;
-  - sem Pagamentos, o PDV segue com pagamentos manuais.
+    - Pix dinâmico gerado no caixa, com terminal, sessão e operador nos metadados, um Pix aberto por carrinho e consulta ao provedor a cada 3 s enquanto aguarda;
+    - a venda só aceita `payment_charge_id` se a cobrança for do PDV desta empresa, estiver **paga** segundo o provedor, tiver o mesmo valor e não tiver sido usada (coluna única);
+    - o pagamento fica com `is_provider_confirmed`; gerar o QR Code não confirma nada;
+    - expiração, falha e cancelamento liberam a linha; Pix pago depois de o atendimento ser abandonado aparece na conciliação para devolução ou conferência;
+    - sem Pagamentos, o PDV segue com pagamentos manuais.
 
 ## Telas e permissões
 
@@ -93,11 +93,11 @@ Boleto e cartão (API de Cobranças da Efí) não foram implementados e não sã
 - **Filtros**: período, situação, provedor e origem.
 - **Permissões**: `payments.view`, `payments.create`, `payments.cancel`, `payments.refund`, `payments.view_reports`, `payments.export`, `payments.manage_providers`, `payments.reconcile` e `payments.reprocess`. Operações sensíveis são auditadas (criação, cancelamento, devolução, configuração, teste, registro de webhook, conciliação, reprocessamento e exportações).
 - **RootAdmin** (`/rootadmin/payments`):
-  - disponibilidade de cada provedor;
-  - indicadores operacionais agregados (somente contagens, sem valores das empresas);
-  - integrações com falha;
-  - últimos eventos técnicos, sem conteúdo nem credenciais.
-  - A habilitação por empresa segue no catálogo de módulos.
+    - disponibilidade de cada provedor;
+    - indicadores operacionais agregados (somente contagens, sem valores das empresas);
+    - integrações com falha;
+    - últimos eventos técnicos, sem conteúdo nem credenciais.
+    - A habilitação por empresa segue no catálogo de módulos.
 
 ## Demonstração
 
@@ -113,7 +113,7 @@ Nesses ambientes, o seeder torna a Efí disponível.
 ## Limitações
 
 - Somente Pix (Efí). Boleto, cartão, Sicredi e outros provedores não foram implementados.
-- A integração real depende das credenciais e do certificado da empresa na Efí, de homologação no ambiente de teste da Efí e de mTLS no servidor para o webhook. Nenhuma chamada real foi feita nesta etapa.
+- A integração real depende das credenciais e do certificado da empresa na Efí, e de homologação no ambiente de teste da Efí. Nenhuma chamada real foi feita nesta etapa.
 - A tarifa do Pix não é informada pela consulta documentada; taxas e líquido ficam vazios.
 - A segunda via é a impressão da página da cobrança (QR Code e copia e cola), não um PDF próprio.
 - Devolução de cobrança de venda não altera a venda; o acerto comercial segue em Vendas.

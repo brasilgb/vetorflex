@@ -4,6 +4,8 @@ namespace Database\Seeders;
 
 use App\Modules\Customers\Enums\CustomerPermission;
 use App\Modules\Finance\Enums\FinancePermission;
+use App\Modules\Fiscal\Enums\FiscalPermission;
+use App\Modules\Fiscal\Providers\FiscalProviderRegistry;
 use App\Modules\Inventory\Enums\InventoryPermission;
 use App\Modules\ModuleManager\Models\PlatformModule;
 use App\Modules\Payments\Enums\PaymentPermission;
@@ -30,6 +32,7 @@ class PlatformModuleSeeder extends Seeder
             ['identifier' => 'pos', 'name' => 'PDV — Frente de Caixa', 'description' => 'Terminais, abertura e fechamento de caixa, venda rápida com pagamentos combinados, sangrias, suprimentos, devoluções e comprovantes não fiscais.', 'dependencies' => [], 'optional_integrations' => ['customers', 'products', 'inventory', 'sales', 'finance'], 'permissions' => PosPermission::catalog(), 'development_status' => PlatformModule::IMPLEMENTED, 'version' => '1.0.0'],
             ['identifier' => 'inventory', 'name' => 'Estoque', 'description' => 'Mercadorias, saldos por depósito, entradas e saídas, transferências, inventários, alertas de estoque mínimo e relatórios.', 'dependencies' => [], 'optional_integrations' => ['products', 'purchases', 'sales', 'pos', 'finance'], 'permissions' => InventoryPermission::catalog(), 'development_status' => PlatformModule::IMPLEMENTED, 'version' => '1.0.0'],
             ['identifier' => 'payments', 'name' => 'Pagamentos', 'description' => 'Cobranças Pix pela conta da própria empresa no provedor, link e QR Code, confirmação por webhook, conciliação, devoluções e relatórios.', 'dependencies' => [], 'optional_integrations' => ['customers', 'sales', 'finance', 'pos'], 'permissions' => PaymentPermission::catalog(), 'development_status' => PlatformModule::IMPLEMENTED, 'version' => '1.0.0'],
+            ['identifier' => 'fiscal', 'name' => 'Documentos Fiscais', 'description' => 'Central de NFS-e, NF-e e NFC-e pelo provedor liberado na plataforma: rascunho, validação, emissão, consulta, cancelamento, XML e PDF protegidos e conciliação.', 'dependencies' => [], 'optional_integrations' => ['customers', 'products', 'sales', 'pos', 'finance'], 'permissions' => FiscalPermission::catalog(), 'development_status' => PlatformModule::IMPLEMENTED, 'version' => '1.0.0'],
         ] as $sortOrder => $module) {
             // A disponibilidade comercial é decidida pelo RootAdmin e não pode ser desfeita por um novo seed.
             PlatformModule::query()->updateOrCreate(
@@ -40,5 +43,6 @@ class PlatformModuleSeeder extends Seeder
 
         // Provedores de pagamento implementados: indisponíveis até decisão do RootAdmin, sem desfazer decisão anterior.
         app(ProviderRegistry::class)->ensureRegistered();
+        app(FiscalProviderRegistry::class)->ensureRegistered();
     }
 }

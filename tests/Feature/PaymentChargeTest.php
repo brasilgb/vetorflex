@@ -336,3 +336,15 @@ test('charges and receipts export to CSV', function () {
     expect($this->get('/payments/charges/export')->assertOk()->streamedContent())->toStartWith("\u{FEFF}")->toContain('Mensalidade de novembro');
     expect($this->get('/payments/reports/csv')->assertOk()->streamedContent())->toContain('E00000000202611271200abcdef12345');
 });
+
+test('registering the efí webhook skips server mtls, relying on the secret url and the provider query', function () {
+    $state = [];
+    fakeEfi($state);
+    $company = Company::factory()->create();
+    actingAsPaymentsMember($company);
+    $account = efiAccount($company);
+
+    $this->post("/payments/settings/accounts/{$account->id}/webhook")->assertSessionHasNoErrors();
+
+    expect($state['webhook_headers'])->toBe(['true']);
+});

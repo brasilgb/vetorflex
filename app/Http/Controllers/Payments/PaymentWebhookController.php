@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 /**
  * Notificações dos provedores. A conta (e portanto a empresa) vem do token secreto da URL; a origem é conferida
  * pela lista de IPs configurada (`payments.webhooks.allowed_ips`), quando a verificação está ligada. A resposta é
- * sempre rápida: o processamento acontece na fila. Na Efí, o mTLS é configurado no servidor web (ver PAYMENTS.md).
+ * sempre rápida: o processamento acontece na fila. Na Efí, o registro dispensa mTLS (`x-skip-mtls-checking`); a confirmação vem sempre da consulta à API (ver PAYMENTS.md).
  */
 class PaymentWebhookController extends Controller
 {

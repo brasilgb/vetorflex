@@ -413,12 +413,11 @@ function AccountPanel({
                                 {account.webhook_registered_at
                                     ? `Registrado em ${formatDateTime(account.webhook_registered_at)}.`
                                     : 'Ainda não registrado.'}{' '}
-                                A URL é secreta: não a compartilhe. A Efí exige
-                                TLS mútuo (mTLS) no servidor que recebe a
-                                notificação; o responsável técnico deve
-                                configurar o servidor web com a cadeia de
-                                certificados da Efí antes do registro. Mesmo sem
-                                webhook, a conciliação consulta as cobranças
+                                A URL é secreta: não a compartilhe. O registro
+                                dispensa o mTLS no servidor da aplicação; a
+                                origem é conferida pelo token da URL e cada
+                                pagamento é confirmado por consulta à Efí. Mesmo
+                                sem webhook, a conciliação consulta as cobranças
                                 periodicamente.
                             </p>
                         </div>

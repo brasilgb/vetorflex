@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\Finance\Services\FinanceRecurrenceService;
+use App\Modules\Fiscal\Services\FiscalDocumentService;
 use App\Modules\Payments\Services\WebhookService;
 use App\Modules\Products\Models\ProductImport;
 use App\Modules\Purchases\Models\SupplierImport;
@@ -51,3 +52,10 @@ Artisan::command('payments:reconcile', function (WebhookService $webhooks) {
 })->purpose('Consulta os provedores para conciliar cobranças em aberto e marca as vencidas');
 
 Schedule::command('payments:reconcile')->everyFifteenMinutes()->withoutOverlapping();
+
+Artisan::command('fiscal:reconcile', function (FiscalDocumentService $documents) {
+    $result = $documents->reconcile();
+    $this->info("Documentos fiscais consultados: {$result['checked']}; atualizados: {$result['changed']}; recolocados na fila: {$result['requeued']}.");
+})->purpose('Consulta o provedor fiscal para documentos pendentes e recoloca na fila os que ficaram aguardando');
+
+Schedule::command('fiscal:reconcile')->everyFiveMinutes()->withoutOverlapping();

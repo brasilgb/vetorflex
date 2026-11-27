@@ -30,6 +30,15 @@ return [
 
     'disks' => [
 
+        // Documentos fiscais (XML e PDF): privado, segregado por empresa, servido só por rota com autorização.
+        'fiscal' => [
+            'driver' => 'local',
+            'root' => env('FISCAL_STORAGE_ROOT') ?: storage_path('app/private/fiscal'),
+            'visibility' => 'private',
+            'throw' => true,
+            'report' => false,
+        ],
+
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),

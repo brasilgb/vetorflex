@@ -1,5 +1,6 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import {
+    FileText,
     KeyRound,
     LayoutGrid,
     Package,
@@ -38,6 +39,16 @@ import { index as recurrences } from '@/routes/finance/recurrences';
 import { index as financeReports } from '@/routes/finance/reports';
 import { index as financeTitles } from '@/routes/finance/titles';
 import { index as financeTransfers } from '@/routes/finance/transfers';
+import {
+    dashboard as fiscalDashboard,
+    settings as fiscalSettings,
+} from '@/routes/fiscal';
+import {
+    create as createFiscalDocument,
+    index as fiscalDocuments,
+} from '@/routes/fiscal/documents';
+import { index as fiscalItems } from '@/routes/fiscal/items';
+import { index as fiscalReports } from '@/routes/fiscal/reports';
 import {
     dashboard as inventoryDashboard,
     settings as inventorySettings,
@@ -89,6 +100,7 @@ import {
 } from '@/routes/root-admin';
 import { index as administrators } from '@/routes/root-admin/administrators';
 import { index as auditLogs } from '@/routes/root-admin/audit';
+import { index as rootAdminFiscal } from '@/routes/root-admin/fiscal';
 import { index as rootAdminPayments } from '@/routes/root-admin/payments';
 import { index as companies } from '@/routes/root-admin/companies';
 import { index as modules } from '@/routes/root-admin/modules';
@@ -289,6 +301,49 @@ export function AppSidebar() {
                   },
               ]
             : []),
+        ...(tenant.can('fiscal.view')
+            ? [
+                  {
+                      title: 'Documentos fiscais',
+                      href: fiscalDashboard(),
+                      icon: FileText,
+                      items: [
+                          {
+                              permission: 'fiscal.view',
+                              title: 'Visão geral',
+                              href: fiscalDashboard(),
+                          },
+                          {
+                              permission: 'fiscal.view',
+                              title: 'Documentos',
+                              href: fiscalDocuments(),
+                          },
+                          {
+                              permission: 'fiscal.create_draft',
+                              title: 'Novo documento',
+                              href: createFiscalDocument(),
+                          },
+                          {
+                              permission: 'fiscal.view',
+                              title: 'Dados fiscais dos itens',
+                              href: fiscalItems(),
+                          },
+                          {
+                              permission: 'fiscal.view_reports',
+                              title: 'Relatórios',
+                              href: fiscalReports(),
+                          },
+                          {
+                              permission: 'fiscal.manage_settings',
+                              title: 'Configurações',
+                              href: fiscalSettings(),
+                          },
+                      ]
+                          .filter(({ permission }) => tenant.can(permission))
+                          .map(({ title, href }) => ({ title, href })),
+                  },
+              ]
+            : []),
         ...(tenant.can('pos.operate')
             ? [
                   {
@@ -422,6 +477,10 @@ export function AppSidebar() {
                           { title: 'Catálogo de módulos', href: modules() },
                           { title: 'Administradores', href: administrators() },
                           { title: 'Pagamentos', href: rootAdminPayments() },
+                          {
+                              title: 'Documentos fiscais',
+                              href: rootAdminFiscal(),
+                          },
                           { title: 'Auditoria', href: auditLogs() },
                           { title: 'Configurações', href: platformSettings() },
                       ],

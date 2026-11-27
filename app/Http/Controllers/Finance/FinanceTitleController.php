@@ -13,6 +13,7 @@ use App\Modules\Finance\Models\FinanceTitle;
 use App\Modules\Finance\Services\FinanceTitleService;
 use App\Modules\Finance\Support\FinanceCsv;
 use App\Modules\Finance\Support\FinancePresenter;
+use App\Modules\Fiscal\Services\FiscalDirectory;
 use App\Modules\Payments\Services\ChargeDirectory;
 use App\Modules\Tenancy\Models\Company;
 use Illuminate\Database\Eloquent\Builder;
@@ -83,6 +84,7 @@ class FinanceTitleController extends FinanceController
             'accounts' => $this->activeAccounts($company),
             'paymentMethods' => $this->paymentMethods(),
             'paymentCharges' => $title->kind->value === 'receivable' ? app(ChargeDirectory::class)->forOrigin($company, 'finance_title', $title->id, $this->allows($request, 'payments.view'), $this->allows($request, 'payments.create')) : null,
+            'fiscalDocuments' => $title->kind->value === 'receivable' ? app(FiscalDirectory::class)->forOrigin($company, 'finance_title', $title->id, $this->allows($request, 'fiscal.view'), $this->allows($request, 'fiscal.create_draft')) : null,
             'today' => $this->today($request),
             'attachmentRules' => ['mimes' => config('finance.attachments.mimes'), 'maximum_kilobytes' => config('finance.attachments.maximum_kilobytes')],
         ]);

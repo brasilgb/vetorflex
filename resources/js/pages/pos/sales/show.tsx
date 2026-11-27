@@ -1,6 +1,9 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import CheckboxField from '@/components/checkbox-field';
+import OriginFiscalDocumentsSection, {
+    type OriginFiscalDocuments,
+} from '@/components/fiscal/origin-fiscal-documents';
 import FormField from '@/components/form-field';
 import Heading from '@/components/heading';
 import NativeSelect from '@/components/native-select';
@@ -289,6 +292,7 @@ export default function PosSaleShow({
     salesEnabled,
     canReturn,
     canReprint,
+    fiscalDocuments = null,
 }: {
     sale: PosSaleData;
     items: SaleItem[];
@@ -299,6 +303,7 @@ export default function PosSaleShow({
     salesEnabled: boolean;
     canReturn: boolean;
     canReprint: boolean;
+    fiscalDocuments?: OriginFiscalDocuments;
 }) {
     const { formatDateTime } = useTenant();
     const title = sale.order_number
@@ -556,6 +561,11 @@ export default function PosSaleShow({
                         </ul>
                     </section>
                 )}
+
+                <OriginFiscalDocumentsSection
+                    data={fiscalDocuments}
+                    canCreate={sale.status === 'completed'}
+                />
 
                 <p className="text-xs text-muted-foreground">
                     Comprovante comercial não fiscal. Sem validade fiscal.

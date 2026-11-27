@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Pos;
 use App\Http\Requests\Pos\PosReturnRequest;
 use App\Modules\Core\Commerce\PaymentMethod;
 use App\Modules\Core\Services\AuditService;
+use App\Modules\Fiscal\Services\FiscalDirectory;
 use App\Modules\Pos\Enums\PosPermission;
 use App\Modules\Pos\Enums\PosSaleStatus;
 use App\Modules\Pos\Enums\PosSessionStatus;
@@ -83,6 +84,8 @@ class PosSaleController extends PosController
             'salesEnabled' => $this->module->isEnabled($company, 'sales'),
             'canReturn' => $sale->status === PosSaleStatus::Completed,
             'canReprint' => $this->can($request, PosPermission::Reprint),
+            // Documento fiscal é distinto do comprovante não fiscal do PDV e só aparece com o módulo contratado.
+            'fiscalDocuments' => app(FiscalDirectory::class)->forOrigin($company, 'pos_sale', $sale->id, $this->allows($request, 'fiscal.view'), $this->allows($request, 'fiscal.create_draft')),
         ]);
     }
 

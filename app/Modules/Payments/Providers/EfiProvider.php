@@ -110,7 +110,10 @@ class EfiProvider implements PaymentProvider
             throw new ProviderException('Informe a chave Pix da conta antes de registrar o webhook.');
         }
 
-        $this->call($account, fn (PendingRequest $http): Response => $http->put('/v2/webhook/'.rawurlencode((string) $account->pix_key), ['webhookUrl' => $url]));
+        // Sem mTLS no servidor da aplicação, a Efí aceita o registro com `x-skip-mtls-checking: true` (prática da
+        // integração em produção do VetorOS). A origem é então autenticada pelo token secreto da URL, pela lista de
+        // IPs e, sobretudo, pela consulta da cobrança na API antes de qualquer confirmação.
+        $this->call($account, fn (PendingRequest $http): Response => $http->withHeaders(['x-skip-mtls-checking' => 'true'])->put('/v2/webhook/'.rawurlencode((string) $account->pix_key), ['webhookUrl' => $url]));
     }
 
     public function chargeIdsFromWebhook(array $payload): array

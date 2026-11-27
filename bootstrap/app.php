@@ -27,7 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
         // Notificações dos provedores de pagamento: autenticadas pelo token secreto da conta e pela origem.
-        $middleware->validateCsrfTokens(except: ['webhooks/payments/*']);
+        $middleware->validateCsrfTokens(except: ['webhooks/payments/*', 'webhooks/fiscal/*']);
 
         $middleware->web(append: [
             HandleAppearance::class,

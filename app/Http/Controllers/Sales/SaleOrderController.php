@@ -7,6 +7,7 @@ use App\Http\Requests\Sales\SaveSaleOrderRequest;
 use App\Modules\Core\Commerce\PaymentMethod;
 use App\Modules\Core\Services\AuditService;
 use App\Modules\Core\Support\CsvFormat;
+use App\Modules\Fiscal\Services\FiscalDirectory;
 use App\Modules\Payments\Services\ChargeDirectory;
 use App\Modules\Sales\Enums\SaleOrderStatus;
 use App\Modules\Sales\Enums\SaleOrigin;
@@ -88,6 +89,7 @@ class SaleOrderController extends SalesController
                 ->map(fn (SaleReturn $return): array => $this->presenter->saleReturn($return, $canViewCost))->values(),
             'stockEnabled' => $stock->isEnabled($this->company($request)),
             'paymentCharges' => app(ChargeDirectory::class)->forOrigin($this->company($request), 'sale_order', $order->id, $this->allows($request, 'payments.view'), $this->allows($request, 'payments.create')),
+            'fiscalDocuments' => app(FiscalDirectory::class)->forOrigin($this->company($request), 'sale_order', $order->id, $this->allows($request, 'fiscal.view'), $this->allows($request, 'fiscal.create_draft')),
             'today' => $this->today($request),
         ]);
     }

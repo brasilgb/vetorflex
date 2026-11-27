@@ -1,5 +1,8 @@
 import { Head, Link } from '@inertiajs/react';
 import ConfirmButton from '@/components/confirm-button';
+import OriginFiscalDocumentsSection, {
+    type OriginFiscalDocuments,
+} from '@/components/fiscal/origin-fiscal-documents';
 import Heading from '@/components/heading';
 import OriginChargesSection, {
     type OriginCharges,
@@ -57,6 +60,7 @@ export default function SaleOrderShow({
     returns,
     stockEnabled,
     paymentCharges = null,
+    fiscalDocuments = null,
     today,
 }: {
     order: SaleOrder;
@@ -64,6 +68,7 @@ export default function SaleOrderShow({
     returns: SaleReturn[];
     stockEnabled: boolean;
     paymentCharges?: OriginCharges;
+    fiscalDocuments?: OriginFiscalDocuments;
     today: string;
 }) {
     const { can } = useTenant();
@@ -482,6 +487,10 @@ export default function SaleOrderShow({
                 <OriginChargesSection
                     data={paymentCharges}
                     isOpen={status !== 'draft' && status !== 'cancelled'}
+                />
+                <OriginFiscalDocumentsSection
+                    data={fiscalDocuments}
+                    canCreate={status !== 'draft' && status !== 'cancelled'}
                 />
             </div>
         </>

@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             PosDemoSeeder::class,
             StockDemoSeeder::class,
             PaymentsDemoSeeder::class,
+            FiscalDemoSeeder::class,
         ]);
     }
 }

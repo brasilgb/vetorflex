@@ -4,6 +4,9 @@ import { financeBreadcrumb } from '@/components/finance/finance-nav';
 import MoneyInput from '@/components/finance/money-input';
 import SettleDialog from '@/components/finance/settle-dialog';
 import TitleStatus from '@/components/finance/title-status';
+import OriginFiscalDocumentsSection, {
+    type OriginFiscalDocuments,
+} from '@/components/fiscal/origin-fiscal-documents';
 import FormField from '@/components/form-field';
 import Heading from '@/components/heading';
 import OriginChargesSection, {
@@ -392,6 +395,7 @@ export default function FinanceTitleShow({
     accounts,
     paymentMethods,
     paymentCharges = null,
+    fiscalDocuments = null,
     today,
     attachmentRules,
 }: {
@@ -401,6 +405,7 @@ export default function FinanceTitleShow({
     accounts: FinanceOption[];
     paymentMethods: Option[];
     paymentCharges?: OriginCharges;
+    fiscalDocuments?: OriginFiscalDocuments;
     today: string;
     attachmentRules: { mimes: string[]; maximum_kilobytes: number };
 }) {
@@ -730,6 +735,7 @@ export default function FinanceTitleShow({
                     </ol>
                 </section>
                 <OriginChargesSection data={paymentCharges} isOpen={isOpen} />
+                <OriginFiscalDocumentsSection data={fiscalDocuments} />
             </div>
         </>
     );

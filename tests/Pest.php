@@ -3,6 +3,9 @@
 use App\Models\User;
 use App\Modules\Finance\Enums\FinancePermission;
 use App\Modules\Finance\Models\FinanceAccount;
+use App\Modules\Fiscal\Enums\FiscalPermission;
+use App\Modules\Fiscal\Models\FiscalProviderAvailability;
+use App\Modules\Fiscal\Models\FiscalSetting;
 use App\Modules\Inventory\Data\StockOperation;
 use App\Modules\Inventory\Enums\InventoryPermission;
 use App\Modules\Inventory\Services\InventoryService;
@@ -27,6 +30,7 @@ use App\Modules\Purchases\Models\SupplierProfile;
 use App\Modules\Sales\Enums\SalePermission;
 use App\Modules\Tenancy\Models\Company;
 use Brick\Math\BigDecimal;
+use Database\Seeders\Support\SimulatedSpedy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
@@ -508,6 +512,8 @@ function fakeEfi(array &$state): void
         }
 
         if (str_starts_with((string) $path, '/v2/webhook/')) {
+            $state['webhook_headers'] = $request->header('x-skip-mtls-checking');
+
             return Http::response(['webhookUrl' => $request->data()['webhookUrl'] ?? null], 201);
         }
 
@@ -519,4 +525,96 @@ function fakeEfi(array &$state): void
 function efiWebhook(PaymentProviderAccount $account, array $payload)
 {
     return test()->postJson("/webhooks/payments/efi/{$account->webhook_token}/pix", $payload);
+}
+
+/**
+ * Membro da empresa com o módulo Documentos Fiscais (e, opcionalmente, outros) habilitado. Sem `$permissions`, entra
+ * como proprietário; com a lista, como operador com exatamente essas permissões.
+ *
+ * @param  list<BackedEnum>|null  $permissions
+ * @param  list<string>  $alsoEnable
+ */
+function actingAsFiscalMember(Company $company, ?array $permissions = null, array $alsoEnable = [], ?User $user = null): User
+{
+    $user ??= User::factory()->create();
+    $user->companies()->syncWithoutDetaching([$company->id => [
+        'role' => $permissions === null ? 'owner' : 'operator',
+        'is_active' => true,
+        'permissions' => array_map(fn (BackedEnum $permission): string => (string) $permission->value, $permissions ?? []),
+    ]]);
+    $catalogs = [
+        'fiscal' => ['Documentos Fiscais', FiscalPermission::catalog()],
+        'sales' => ['Vendas', SalePermission::catalog()],
+        'finance' => ['Financeiro', FinancePermission::catalog()],
+        'pos' => ['PDV', PosPermission::catalog()],
+        'products' => ['Produtos', ProductPermission::catalog()],
+    ];
+
+    foreach (['fiscal', ...$alsoEnable] as $identifier) {
+        [$name, $catalog] = $catalogs[$identifier];
+        $module = PlatformModule::query()->firstOrCreate(['identifier' => $identifier], ['name' => $name, 'description' => $name, 'dependencies' => [], 'permissions' => $catalog]);
+        CompanyModule::query()->firstOrCreate(['company_id' => $company->id, 'platform_module_id' => $module->id], ['activated_by' => $user->id, 'activated_at' => now()]);
+    }
+
+    test()->actingAs($user)->withSession(['active_company_id' => $company->id]);
+
+    return $user;
+}
+
+/**
+ * Spedy disponível na plataforma (sandbox, chave fictícia) e empresa pronta para emitir em homologação: cadastrada como
+ * emissora, certificado vigente, padrões confirmados. A API é simulada; nenhuma requisição sai do processo.
+ */
+function fiscalReady(Company $company, array $overrides = []): SimulatedSpedy
+{
+    FiscalProviderAvailability::query()->updateOrCreate(['identifier' => 'spedy'], [
+        'name' => 'Spedy', 'is_available' => true, 'document_types' => ['nfse', 'nfe', 'nfce'], 'environment' => 'sandbox',
+        'platform_credentials' => ['owner_api_key' => 'chave-titular-teste', 'webhook_secret' => 'whsec_'.base64_encode('segredo-simulado-de-webhook-32b!')],
+    ]);
+    FiscalSetting::query()->updateOrCreate(['company_id' => $company->id], [
+        'legal_name' => 'Empresa Teste LTDA', 'trade_name' => 'Empresa Teste', 'cnpj' => '11222333000181',
+        'address' => ['street' => 'Rua Teste', 'number' => '10', 'district' => 'Centro', 'postal_code' => '01001000', 'city' => 'São Paulo', 'state' => 'SP'],
+        'city_code' => '3550308', 'tax_regime' => 'simplesNacional', 'provider' => 'spedy', 'environment' => 'homologation',
+        'enabled_types' => ['nfse', 'nfe', 'nfce'], 'series' => ['nfse' => '1', 'nfe' => '1', 'nfce' => '1'],
+        'provider_company_id' => 'empresa-simulada', 'provider_credentials' => ['api_key' => 'chave-empresa-teste'], 'provider_environment' => 'sandbox',
+        'registration_status' => FiscalSetting::REGISTRATION_REGISTERED, 'registered_at' => now(), 'certificate_expires_at' => now()->addYear(),
+        'nfse' => ['service_code' => '01.07', 'iss_rate' => '2', 'taxation_type' => 'taxationInMunicipality'],
+        'product_defaults' => ['unit' => 'UN', 'origin' => '0', 'cfop' => '5102', 'icms_situation' => '102', 'pis_situation' => '49', 'cofins_situation' => '49'],
+        'nfce_csc_id' => '1', 'nfce_csc' => 'csc-teste',
+        'tax_settings_confirmed_at' => now(), 'tax_settings_confirmed_by' => 'Contador Teste',
+        ...$overrides,
+    ]);
+    $spedy = new SimulatedSpedy;
+    $spedy->issuerCnpj = '11222333000181';
+
+    return $spedy->start();
+}
+
+/** Dados de uma NFS-e avulsa válida para o tomador fictício. */
+function nfseDraftData(array $overrides = []): array
+{
+    return [
+        'type' => 'nfse',
+        'receiver' => ['name' => 'Cliente Tomador', 'document' => '529.982.247-25'],
+        'items' => [['description' => 'Consultoria em processos', 'quantity' => '1', 'unit_price' => '500.00']],
+        'description' => 'Consultoria em processos — novembro',
+        'idempotency_key' => (string) Str::uuid(),
+        ...$overrides,
+    ];
+}
+
+/** Assina o corpo como a Spedy (Standard Webhooks) com o segredo simulado. */
+function spedyWebhook(array $payload, ?string $secret = null, ?int $timestamp = null, string $id = 'msg_teste_1')
+{
+    $body = (string) json_encode($payload);
+    $timestamp ??= time();
+    $key = base64_decode(substr($secret ?? 'whsec_'.base64_encode('segredo-simulado-de-webhook-32b!'), 6));
+    $signature = base64_encode(hash_hmac('sha256', "{$id}.{$timestamp}.{$body}", $key, true));
+
+    return test()->call('POST', '/webhooks/fiscal/spedy', [], [], [], [
+        'CONTENT_TYPE' => 'application/json',
+        'HTTP_WEBHOOK_ID' => $id,
+        'HTTP_WEBHOOK_TIMESTAMP' => (string) $timestamp,
+        'HTTP_WEBHOOK_SIGNATURE' => "v1,{$signature}",
+    ], $body);
 }
