@@ -10,6 +10,10 @@ use App\Modules\ModuleManager\Models\CompanyModule;
 use App\Modules\ModuleManager\Models\PlatformModule;
 use App\Modules\Parties\Models\Party;
 use App\Modules\Parties\Models\PartyRole;
+use App\Modules\Payments\Enums\AccountStatus;
+use App\Modules\Payments\Enums\PaymentPermission;
+use App\Modules\Payments\Models\PaymentProviderAccount;
+use App\Modules\Payments\Models\PaymentProviderAvailability;
 use App\Modules\Pos\Enums\PosPermission;
 use App\Modules\Pos\Models\PosSession;
 use App\Modules\Pos\Models\PosTerminal;
@@ -24,6 +28,8 @@ use App\Modules\Sales\Enums\SalePermission;
 use App\Modules\Tenancy\Models\Company;
 use Brick\Math\BigDecimal;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -401,4 +407,116 @@ function stockItem(Company $company, ?string $initial = null, ?int $warehouseId 
     }
 
     return $variant->fresh();
+}
+
+/**
+ * Autentica um membro com Pagamentos habilitado e, quando pedidos, outros módulos. Sem permissões, é proprietário.
+ *
+ * @param  list<BackedEnum>|null  $permissions
+ * @param  list<string>  $alsoEnable
+ */
+function actingAsPaymentsMember(Company $company, ?array $permissions = null, array $alsoEnable = [], ?User $user = null): User
+{
+    $user ??= User::factory()->create();
+    $user->companies()->syncWithoutDetaching([$company->id => [
+        'role' => $permissions === null ? 'owner' : 'operator',
+        'is_active' => true,
+        'permissions' => array_map(fn (BackedEnum $permission): string => (string) $permission->value, $permissions ?? []),
+    ]]);
+    $catalogs = [
+        'payments' => ['Pagamentos', PaymentPermission::catalog()],
+        'sales' => ['Vendas', SalePermission::catalog()],
+        'finance' => ['Financeiro', FinancePermission::catalog()],
+        'pos' => ['PDV', PosPermission::catalog()],
+        'products' => ['Produtos', ProductPermission::catalog()],
+    ];
+
+    foreach (['payments', ...$alsoEnable] as $identifier) {
+        [$name, $catalog] = $catalogs[$identifier];
+        $module = PlatformModule::query()->firstOrCreate(['identifier' => $identifier], ['name' => $name, 'description' => $name, 'dependencies' => [], 'permissions' => $catalog]);
+        CompanyModule::query()->firstOrCreate(['company_id' => $company->id, 'platform_module_id' => $module->id], ['activated_by' => $user->id, 'activated_at' => now()]);
+    }
+
+    test()->actingAs($user)->withSession(['active_company_id' => $company->id]);
+
+    return $user;
+}
+
+/** Conta Efí ativa (homologação) com credenciais fictícias e o provedor disponível na plataforma. */
+function efiAccount(Company $company, ?int $financeAccountId = null): PaymentProviderAccount
+{
+    PaymentProviderAvailability::query()->updateOrCreate(['identifier' => 'efi'], ['name' => 'Efí', 'is_available' => true]);
+    $token = Str::random(48);
+
+    return PaymentProviderAccount::create([
+        'company_id' => $company->id,
+        'provider' => 'efi',
+        'environment' => 'homologation',
+        'name' => 'Efí — Homologação',
+        'credentials' => ['client_id' => 'Client_Id_teste', 'client_secret' => 'Client_Secret_muito_secreto', 'certificate' => base64_encode("-----BEGIN CERTIFICATE-----\nteste\n-----END CERTIFICATE-----\n")],
+        'pix_key' => 'chave-pix-teste@example.com',
+        'methods' => ['pix'],
+        'expiration_seconds' => 3600,
+        'webhook_token' => $token,
+        'webhook_token_hash' => hash('sha256', $token),
+        'status' => AccountStatus::Active,
+        'finance_account_id' => $financeAccountId,
+    ]);
+}
+
+/**
+ * Simula a API Pix da Efí. `$state` controla a consulta da cobrança: `pix` (pagamentos recebidos), `status` e
+ * `devolucoes` por endToEndId. Nenhuma chamada sai do processo de teste.
+ *
+ * @param  array<string, mixed>  $state
+ */
+function fakeEfi(array &$state): void
+{
+    Http::preventStrayRequests();
+    Http::fake(function (Request $request) use (&$state) {
+        $path = parse_url($request->url(), PHP_URL_PATH);
+        $state['calls'][] = $request->method().' '.$path;
+
+        if ($path === '/oauth/token') {
+            return Http::response(['access_token' => 'token-teste', 'token_type' => 'Bearer', 'expires_in' => 3600]);
+        }
+
+        if (preg_match('#^/v2/cob/([A-Za-z0-9]+)$#', (string) $path, $match)) {
+            $state['txid'] = $match[1];
+
+            if ($request->method() === 'PATCH') {
+                $state['status'] = 'REMOVIDA_PELO_USUARIO_RECEBEDOR';
+            }
+
+            $pix = array_map(fn (array $pix): array => [...$pix, 'txid' => $match[1], 'devolucoes' => $state['devolucoes'][$pix['endToEndId']] ?? []], $state['pix'] ?? []);
+
+            return Http::response(array_filter(['txid' => $match[1], 'status' => $state['status'] ?? 'ATIVA', 'loc' => ['id' => 77], 'pixCopiaECola' => '00020101021226830014BR.GOV.BCB.PIX', 'valor' => ['original' => $state['amount'] ?? '10.00'], 'pix' => $pix === [] ? null : $pix]), $request->method() === 'PUT' ? 201 : 200);
+        }
+
+        if ($path === '/v2/cob') {
+            return Http::response(['cobs' => []]);
+        }
+
+        if (preg_match('#^/v2/loc/\d+/qrcode$#', (string) $path)) {
+            return Http::response(['qrcode' => '00020101021226830014BR.GOV.BCB.PIX', 'imagemQrcode' => 'data:image/svg+xml;base64,PHN2Zy8+', 'linkVisualizacao' => 'https://pix.example.com/v2/visualizacao']);
+        }
+
+        if (preg_match('#^/v2/pix/([^/]+)/devolucao/([^/]+)$#', (string) $path, $match)) {
+            $state['refund_requests'][] = $match[2];
+
+            return Http::response(['id' => $match[2], 'rtrId' => 'D'.$match[2], 'valor' => $request->data()['valor'] ?? '0', 'status' => 'EM_PROCESSAMENTO'], 201);
+        }
+
+        if (str_starts_with((string) $path, '/v2/webhook/')) {
+            return Http::response(['webhookUrl' => $request->data()['webhookUrl'] ?? null], 201);
+        }
+
+        return Http::response(['nome' => 'nao_encontrado', 'mensagem' => 'Rota não simulada.'], 404);
+    });
+}
+
+/** Notificação Pix da Efí para a conta (token da URL), como enviada pelo provedor. */
+function efiWebhook(PaymentProviderAccount $account, array $payload)
+{
+    return test()->postJson("/webhooks/payments/efi/{$account->webhook_token}/pix", $payload);
 }

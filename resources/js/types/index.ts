@@ -8,3 +8,4 @@ export type * from './finance';
 export type * from './platform';
 export type * from './pos';
 export type * from './inventory';
+export type * from './payments';

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Pos\PosCatalogController;
 use App\Http\Controllers\Pos\PosHomeController;
+use App\Http\Controllers\Pos\PosPixController;
 use App\Http\Controllers\Pos\PosRegisterController;
 use App\Http\Controllers\Pos\PosReportController;
 use App\Http\Controllers\Pos\PosSaleController;
@@ -26,6 +27,9 @@ Route::prefix('pos')->name('pos.')->middleware(['tenant', 'tenant.records'])->gr
         Route::post('sessions/{session}/cancel', [PosRegisterController::class, 'cancel'])->name('sales.cancel');
         Route::post('sessions/{session}/cash-movements', [PosRegisterController::class, 'cashMovement'])->name('cash-movements.store');
         Route::get('sessions/{session}/summary', [PosRegisterController::class, 'summary'])->name('sessions.summary');
+        Route::post('sessions/{session}/pix', [PosPixController::class, 'store'])->name('pix.store');
+        Route::get('sessions/{session}/pix/{charge}', [PosPixController::class, 'show'])->name('pix.show');
+        Route::post('sessions/{session}/pix/{charge}/cancel', [PosPixController::class, 'cancel'])->name('pix.cancel');
         Route::get('sessions/{session}', [PosSessionController::class, 'show'])->name('sessions.show');
 
         Route::get('catalog/search', [PosCatalogController::class, 'search'])->name('catalog.search');

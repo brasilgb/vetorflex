@@ -6,6 +6,7 @@ import {
     Store,
     Receipt,
     Warehouse,
+    QrCode,
     ShieldCheck,
     ShoppingCart,
     UsersRound,
@@ -47,6 +48,16 @@ import { index as inventoryMovements } from '@/routes/inventory/movements';
 import { index as inventoryReports } from '@/routes/inventory/reports';
 import { index as inventoryTransfers } from '@/routes/inventory/transfers';
 import { index as inventoryWarehouses } from '@/routes/inventory/warehouses';
+import {
+    dashboard as paymentsDashboard,
+    settings as paymentSettings,
+} from '@/routes/payments';
+import {
+    create as createPaymentCharge,
+    index as paymentCharges,
+} from '@/routes/payments/charges';
+import { index as paymentReconciliation } from '@/routes/payments/reconciliation';
+import { index as paymentReports } from '@/routes/payments/reports';
 import { home as posHome, settings as posSettings } from '@/routes/pos';
 import { index as posReports } from '@/routes/pos/reports';
 import { index as posSales } from '@/routes/pos/sales';
@@ -78,6 +89,7 @@ import {
 } from '@/routes/root-admin';
 import { index as administrators } from '@/routes/root-admin/administrators';
 import { index as auditLogs } from '@/routes/root-admin/audit';
+import { index as rootAdminPayments } from '@/routes/root-admin/payments';
 import { index as companies } from '@/routes/root-admin/companies';
 import { index as modules } from '@/routes/root-admin/modules';
 import { index as platformUsers } from '@/routes/root-admin/users';
@@ -234,6 +246,49 @@ export function AppSidebar() {
                   },
               ]
             : []),
+        ...(tenant.can('payments.view')
+            ? [
+                  {
+                      title: 'Pagamentos',
+                      href: paymentsDashboard(),
+                      icon: QrCode,
+                      items: [
+                          {
+                              permission: 'payments.view',
+                              title: 'Visão geral',
+                              href: paymentsDashboard(),
+                          },
+                          {
+                              permission: 'payments.view',
+                              title: 'Cobranças',
+                              href: paymentCharges(),
+                          },
+                          {
+                              permission: 'payments.create',
+                              title: 'Nova cobrança',
+                              href: createPaymentCharge(),
+                          },
+                          {
+                              permission: 'payments.reconcile',
+                              title: 'Conciliação',
+                              href: paymentReconciliation(),
+                          },
+                          {
+                              permission: 'payments.view_reports',
+                              title: 'Relatórios',
+                              href: paymentReports(),
+                          },
+                          {
+                              permission: 'payments.manage_providers',
+                              title: 'Configurações',
+                              href: paymentSettings(),
+                          },
+                      ]
+                          .filter(({ permission }) => tenant.can(permission))
+                          .map(({ title, href }) => ({ title, href })),
+                  },
+              ]
+            : []),
         ...(tenant.can('pos.operate')
             ? [
                   {
@@ -366,6 +421,7 @@ export function AppSidebar() {
                           { title: 'Usuários', href: platformUsers() },
                           { title: 'Catálogo de módulos', href: modules() },
                           { title: 'Administradores', href: administrators() },
+                          { title: 'Pagamentos', href: rootAdminPayments() },
                           { title: 'Auditoria', href: auditLogs() },
                           { title: 'Configurações', href: platformSettings() },
                       ],

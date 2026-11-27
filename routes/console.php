@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\Finance\Services\FinanceRecurrenceService;
+use App\Modules\Payments\Services\WebhookService;
 use App\Modules\Products\Models\ProductImport;
 use App\Modules\Purchases\Models\SupplierImport;
 use App\Modules\Sales\Services\SaleQuoteService;
@@ -43,3 +44,10 @@ Artisan::command('finance:generate-recurrences', function (FinanceRecurrenceServ
 })->purpose('Gera os títulos das receitas e despesas recorrentes, sem baixa automática');
 
 Schedule::command('finance:generate-recurrences')->dailyAt('00:20');
+
+Artisan::command('payments:reconcile', function (WebhookService $webhooks) {
+    $result = $webhooks->reconcile(limit: (int) config('payments.reconcile_batch'));
+    $this->info("Cobranças conciliadas: {$result['synced']}; falhas: {$result['failed']}; marcadas como vencidas: {$result['overdue']}.");
+})->purpose('Consulta os provedores para conciliar cobranças em aberto e marca as vencidas');
+
+Schedule::command('payments:reconcile')->everyFifteenMinutes()->withoutOverlapping();

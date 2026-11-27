@@ -1,6 +1,9 @@
 import { Head, Link } from '@inertiajs/react';
 import ConfirmButton from '@/components/confirm-button';
 import Heading from '@/components/heading';
+import OriginChargesSection, {
+    type OriginCharges,
+} from '@/components/payments/origin-charges';
 import ReasonDialog from '@/components/reason-dialog';
 import FulfillDialog from '@/components/sales/fulfill-dialog';
 import SaleReturnDialog from '@/components/sales/return-dialog';
@@ -53,12 +56,14 @@ export default function SaleOrderShow({
     fulfillments,
     returns,
     stockEnabled,
+    paymentCharges = null,
     today,
 }: {
     order: SaleOrder;
     fulfillments: SaleFulfillment[];
     returns: SaleReturn[];
     stockEnabled: boolean;
+    paymentCharges?: OriginCharges;
     today: string;
 }) {
     const { can } = useTenant();
@@ -474,6 +479,10 @@ export default function SaleOrderShow({
                     </div>
                 </div>
                 <Tabs label="Ficha da venda" tabs={tabs} />
+                <OriginChargesSection
+                    data={paymentCharges}
+                    isOpen={status !== 'draft' && status !== 'cancelled'}
+                />
             </div>
         </>
     );

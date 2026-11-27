@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             FinanceDemoSeeder::class,
             PosDemoSeeder::class,
             StockDemoSeeder::class,
+            PaymentsDemoSeeder::class,
         ]);
     }
 }

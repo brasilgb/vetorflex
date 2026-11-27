@@ -111,6 +111,7 @@ export default function PosRegister({
     settings,
     abilities,
     stockEnabled,
+    providerPix,
     today,
 }: {
     session: Session;
@@ -136,6 +137,7 @@ export default function PosRegister({
         boolean
     >;
     stockEnabled: boolean;
+    providerPix: boolean;
     today: string;
 }) {
     useFlashToast();
@@ -334,6 +336,7 @@ export default function PosRegister({
             amount: string;
             is_term: boolean;
             due_date: string | null;
+            payment_charge_id: number | null;
         }[],
         credentials: Credentials,
     ) {
@@ -955,6 +958,14 @@ export default function PosRegister({
                 processing={finalizeHttp.processing}
                 errors={paymentErrors}
                 needsAuthorization={needsAuthorization}
+                pix={
+                    providerPix
+                        ? {
+                              sessionId: session.id,
+                              cartKey: cart.idempotencyKey,
+                          }
+                        : null
+                }
                 onSubmit={submitPayment}
             />
 

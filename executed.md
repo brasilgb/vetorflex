@@ -1,184 +1,195 @@
-# OMNICHANNEL-08 — Resultado
+# OMNICHANNEL-09 — Resultado
 
-Data: 27/11/2026. Local: `gateway/vetorflex/`. Correio: SHA-256 `441e1289…`, seções 1 a 19. Detalhes do módulo em `docs/STOCK.md`; resumo da etapa em `docs/OMNICHANNEL-08.md`.
+Data: 27/11/2026. Local: `gateway/vetorflex/`. Correio: SHA-256 `dfb04e55…`, seções 1 a 18. Detalhes do módulo em `docs/PAYMENTS.md`; resumo da etapa e análise dos repositórios em `docs/OMNICHANNEL-09.md`.
 
 ## Consolidação da etapa anterior
 
-- O `correio.md` mudou desde a etapa anterior (passou da OMNICHANNEL-07 para a OMNICHANNEL-08).
-- A OMNICHANNEL-07 foi consolidada no commit `3a744c1` (`feat: add point of sale module`) do `.git-local` (`main`), antes de qualquer alteração desta etapa.
-- Não havia alterações concorrentes no diretório de trabalho além do `correio.md`.
-- A estrutura `.git` / `.git-local` não foi unificada nem alterada. Sem push e sem deploy.
-
-## RootAdmin (§3)
-
-- O proprietário já cadastrou o administrador principal em 26/11/2026, com `php artisan rootadmin:create`. O e-mail está verificado.
-- Nenhuma credencial foi criada, pedida ou versionada nesta etapa.
-- Os 31 testes do painel continuam aprovados, inclusive o redirecionamento para `/rootadmin` após o login.
+- O `correio.md` mudou desde a etapa anterior (passou da OMNICHANNEL-08 para a OMNICHANNEL-09).
+- A OMNICHANNEL-08 foi consolidada no commit `408adcc` (`feat: add stock module with warehouses, transfers and counts`) do `.git-local` (`main`), antes de qualquer alteração desta etapa.
+- Não havia alterações concorrentes além do `correio.md`. Sem push, sem deploy, e `.git`/`.git-local` não foram unificados.
 
 ## Funcionalidades implementadas
 
-**Estoque 1.0.0** (`inventory`, independente, comercializável sozinho):
+**Pagamentos 1.0.0** (`payments`, independente, comercializável sozinho):
 
-- Cadastro simplificado de mercadorias sobre a entidade compartilhada de produto:
-  - SKU (gerado se vazio), código interno e código de barras;
-  - categoria existente ou nova, unidade (inclusive fracionável);
-  - estoque mínimo e máximo, custo, preço opcional;
-  - saldo inicial no depósito escolhido.
-- Saldos total, reservado e disponível, e saldo por depósito.
-- Depósitos e localizações. O principal é criado sob demanda e nunca é inativado.
-- Entradas, saídas, ajustes por saldo contado e saldo inicial, por depósito, com justificativa.
-- Estorno de lançamentos manuais. O histórico é imutável.
-- Transferências entre depósitos: numeradas e idempotentes, sem alterar o saldo total nem o custo médio.
-- Inventário (contagem física):
-  - criação por depósito, com seleção de mercadorias ou todas;
-  - contagens, comparação com o saldo atual e prévia de divergências;
-  - aprovação por permissão própria, com um ajuste rastreável por divergência;
-  - cancelamento sem ajustes; aprovação repetida recusada.
-- Ficha da mercadoria (saldos por depósito, mínimo e máximo, últimas movimentações).
-- Filtros por situação:
-  - abaixo do mínimo;
-  - acima do máximo;
-  - sem saldo;
-  - com saldo;
-  - inativas.
-- Estoque negativo configurável (recusado por padrão) e data de início do controle.
-- Importação e exportação CSV, com modelo de arquivo.
-- Painel com dados reais:
-  - mercadorias cadastradas, com saldo e sem saldo;
-  - abaixo do mínimo;
-  - entradas e saídas no período;
-  - sem movimentação;
-  - últimas movimentações e distribuição por depósito;
-  - valor estimado, somente com permissão de custo e custo conhecido.
-- Sete relatórios com CSV: posição, abaixo do mínimo, acima do máximo, sem movimentação, entradas e saídas, saldo por depósito e valor estimado.
-- 12 permissões `inventory.*` e menu Estoque com 8 itens, conforme as permissões.
+- **Central de cobranças**:
+  - criação avulsa, de venda ou de conta a receber;
+  - pagador existente ou cadastro simplificado por `PartyService`;
+  - descrição, valor, vencimento, referência interna, origem e histórico imutável;
+  - listagem com filtros e detalhe;
+  - emissão, consulta ao provedor, cancelamento e devolução;
+  - QR Code, Pix copia e cola e link de pagamento, que podem ser copiados para compartilhar;
+  - segunda via por impressão e exportação CSV.
+- **Estados internos** independentes do provedor: rascunho, pendente, processando, pago, parcialmente pago, vencido, cancelado, expirado, estornado e falha.
+- **Arquitetura de provedores**: contrato `PaymentProvider` com capacidades declaradas; as telas mostram só o que o provedor implementa. A **Efí (Pix)** foi implementada conforme a documentação oficial vigente:
+  - OAuth2 com mTLS (certificado P12 ou PEM);
+  - cobrança imediata com txid próprio;
+  - QR Code e link;
+  - consulta, remoção e devolução;
+  - registro de webhook.
+- **Configurações por empresa**:
+  - provedor e ambiente (homologação ou produção);
+  - credenciais e certificado criptografados, nunca devolvidos à tela;
+  - chave Pix, formas habilitadas, validade do Pix e conta financeira;
+  - teste de conexão, situação da integração e registro do webhook;
+  - instruções passo a passo e última falha, sem segredos.
+- **Webhooks**:
+  - a empresa é identificada pelo token secreto da conta;
+  - IPs de origem conferidos opcionalmente;
+  - notificação persistida antes de processar e processamento por fila com retentativas;
+  - idempotência, tolerância a eventos repetidos e fora de ordem;
+  - confirmação sempre por consulta ao provedor;
+  - registro de falhas e reprocessamento autorizado;
+  - conciliação periódica a cada 15 minutos.
+- **Visão geral** com indicadores reais:
+  - recebido, pendente e vencido;
+  - emitidas, pagas e taxa de recebimento;
+  - por forma, provedor e origem;
+  - últimas cobranças e falhas;
+  - bruto, devolvido, taxas e líquido quando informados;
+  - filtros por período, provedor e origem.
+- **Telas**: conciliação, relatórios por dia com CSV de recebimentos e configurações.
+- **Permissões e auditoria**: 9 permissões `payments.*`; operações sensíveis auditadas.
+- **Integrações opcionais**:
+  - **Vendas**: cobrança do saldo devido, uma cobrança aberta por venda e cobranças visíveis na ficha da venda.
+  - **Financeiro**: cobrança de conta a receber, baixa somente após confirmação, sem baixa duplicada, e estorno compensatório nas devoluções.
+  - **PDV**: Pix dinâmico com QR Code e confirmação do provedor; distinção entre pagamento manual e confirmado; tratamento de expiração, cancelamento e pagamento tardio.
+- **RootAdmin**:
+  - disponibilidade dos provedores;
+  - indicadores agregados, só contagens;
+  - integrações com falha;
+  - eventos técnicos sem conteúdo nem credenciais.
 
-**Pendências estruturais (§15)**:
+## Efetivamente operacional
 
-- **Compras**: deixou de depender comercialmente de Produtos. O recebimento só movimenta estoque com Estoque ou Produtos; sem eles, registra documentos e custos sem saldo. Ganhou cadastro simplificado de item no pedido.
-- **Vendas**: tela de configuração de venda sem identificação, com permissão `sales.manage_settings`.
-- **Clientes**: cadastro, edição e importação gravam a pessoa por `PartyService`.
-- **PHPStan**: os 20 erros antigos foram corrigidos; o projeto inteiro tem 0 erro.
-
-## Funcionalidades reaproveitadas
-
-- `InventoryService` (único ponto de escrita), custo médio, reservas, movimentações imutáveis e idempotentes.
-- `ProductService`, catálogo, categorias e unidades.
-- Atendimento e devolução de Vendas (também usados pelo PDV).
-- Recebimento, devolução e estorno de Compras.
-- `CsvFormat`, `SequenceService`, `AuditService`, `tenant.records` e `module.permission`.
-
-Não há um segundo sistema de estoque.
+- **Funciona hoje**, de ponta a ponta com a Efí simulada nos testes e na demonstração:
+  - fluxo completo da cobrança: criação, emissão, confirmação, cancelamento e devolução;
+  - webhooks, conciliação e integrações com Vendas, Financeiro e PDV;
+  - telas, permissões, CSV e RootAdmin.
+- **Depende de credenciais e homologação externa**:
+  - comunicação real com a Efí: Client ID, Client Secret e certificado da empresa, aplicação com os escopos de Pix na conta Efí, e teste em homologação;
+  - registro do webhook: exige mTLS configurado no servidor web com a cadeia de certificados da Efí;
+  - sem webhook, a conciliação periódica confirma os pagamentos.
+- **Chamadas reais**: nenhuma chamada financeira real foi feita nesta etapa.
 
 ## Decisões arquiteturais
 
-- **Controle de estoque**: o módulo Estoque é a interface comercial do núcleo `Inventory`. O controle fica ativo com Estoque **ou** Produtos (`StockModule`); Produtos já controlava estoque e continua controlando. Vendas, PDV e Compras consultam esse único ponto.
-- **Depósitos**: `inventory_balances` segue como saldo total da empresa, e `inventory_warehouse_balances` guarda o saldo por depósito. Os dois são gravados sob a mesma trava, e a soma dos depósitos é sempre o total. Operações sem depósito usam o principal.
-- **Compatibilidade**: o depósito só entra no hash de idempotência quando informado, e nunca nos estornos; as chaves antigas continuam válidas.
-- **Transferências**: dois registros por item (`transfer_out`/`transfer_in`). Nunca deixam a origem negativa e se corrigem com outra transferência.
-- **Inventário**: a aprovação compara com o saldo no momento da aprovação. Cada ajuste tem chave determinística, o que impede duplicidade.
-- **Isolamento**: a empresa vem sempre do contexto do usuário. Registros de outra empresa dão 404, e as chaves compostas `(company_id, id)` também valem nas novas tabelas.
-- **Financeiro**: movimentações físicas não geram lançamentos financeiros.
-- **Catálogo**: Estoque registrado como implementado 1.0.0, sem dependências, indisponível comercialmente até decisão do RootAdmin e sem ativação automática nas empresas.
+- O webhook só indica o que consultar. A situação vem da consulta ao provedor, e pagamentos são únicos pelo `endToEndId`, por isso repetição ou ordem invertida não duplicam nem regridem a situação.
+- O txid é gravado antes da emissão, então repetir a emissão nunca cria outra cobrança no provedor (409 é tratado com consulta).
+- `active_origin_key` único por empresa garante uma cobrança aberta por venda, título ou carrinho do PDV.
+- Financeiro só pelo ouvinte do próprio Financeiro (`SyncPaymentOperations`), com chaves determinísticas. Cobranças do PDV ficam fora desse caminho, porque o PDV já baixa pela sua integração: não há receita duplicada.
+- Pagamentos tardios (depois de expirada ou cancelada) são registrados, porque o dinheiro foi recebido. Pix do PDV pago sem venda concluída aparece na conciliação.
+- Desativar o módulo preserva os dados, e os webhooks continuam registrando pagamentos reais.
+- Valores com `Brick\Math` e `decimal(15,2)`, sem ponto flutuante; no PDV, as diferenças são calculadas em inteiros.
 
 ## Migrations
 
-- `2026_11_29_100000_create_stock_tables`, aditiva:
-  - tabelas `inventory_warehouses`, `inventory_warehouse_balances`, `inventory_transfers`, `inventory_counts` e `inventory_count_items`;
-  - colunas de depósito em `inventory_movements` e `maximum_stock` em `product_variants`;
-  - depósito principal criado para as empresas que já tinham saldo, assumindo saldo e histórico.
-- **Correção**: três nomes de chave passavam de 64 caracteres. A primeira aplicação no MariaDB local falhou e deixou duas tabelas vazias, criadas por essa tentativa. As tabelas foram removidas, os nomes passaram a ser explícitos e a migration foi reaplicada sem erro. O SQLite dos testes não tem esse limite.
-- **Verificação no MariaDB local**: 2 depósitos principais, 9 saldos iguais à soma dos depósitos e nenhuma movimentação sem depósito.
-- **Seeders locais**: `PlatformModuleSeeder` e `StockDemoSeeder`, este rodado duas vezes sem duplicar (47 movimentações, 2 transferências, 2 inventários). Compras ficou sem dependências no catálogo.
+- `2026_11_30_100000_create_payments_tables`, aditiva:
+  - tabelas `payment_providers`, `payment_provider_accounts`, `payment_charges`, `payment_charge_events`, `payment_transactions`, `payment_refunds` e `payment_webhook_events`;
+  - colunas `payment_charge_id` e `is_provider_confirmed` em `pos_payments`;
+  - nomes de chave explícitos, dentro do limite do MySQL/MariaDB.
+- Aplicada ao banco local `new` (MariaDB) sem erro na primeira tentativa.
+- Rodados `PlatformModuleSeeder` e `PaymentsDemoSeeder`, este duas vezes sem duplicar: 6 cobranças, 4 pagamentos, 1 Pix confirmado no PDV.
 
 ## Arquivos relevantes
 
 - **Backend novo**:
-  - `app/Modules/Inventory`: `StockModule`, `WarehouseService`, `StockItems`, `InventoryCountService`, `StockReports`, `StockImportService`, modelos, enums `InventoryPermission`/`CountStatus`, `StockCsv`, `StockPresenter`;
-  - `app/Http/Controllers/Inventory/Stock/*`, `routes/inventory.php`, `config/inventory.php`;
-  - `app/Http/Controllers/Sales/SalesSettingsController.php`;
-  - `database/seeders/StockDemoSeeder.php`.
+  - `app/Modules/Payments`:
+    - provedores: `EfiProvider`, `PaymentProvider`, `ProviderRegistry`, `ProviderException`;
+    - serviços: `ChargeService`, `ChargeOrigins`, `ChargeQueries`, `ChargeDirectory`, `ProviderAccountService`, `WebhookService`, `PaymentsModule`;
+    - fila, eventos e apoio: `ProcessPaymentWebhook`, `PaymentReceived`, `PaymentRefundConfirmed`, `PaymentPresenter`, modelos e enums;
+  - `app/Http/Controllers/Payments/*`, `app/Http/Controllers/Pos/PosPixController.php`, `app/Http/Controllers/RootAdmin/PaymentsAdminController.php`;
+  - `app/Modules/Pos/Services/PosPix.php`, `app/Modules/Finance/Listeners/SyncPaymentOperations.php`;
+  - `routes/payments.php`, `config/payments.php`;
+  - `database/seeders/PaymentsDemoSeeder.php`, `database/seeders/Support/SimulatedEfi.php`.
 - **Backend alterado**:
-  - `InventoryService`, `StockOperation`, `MovementType`, `MovementOrigin`, `InventoryMovement`;
-  - `SalesStock`, `PurchaseReceiptService`, `PurchaseOrderController` (item simplificado), `SaleItems`, `SalePermission`;
-  - `ProductService`, `ProductVariant`, `ProductPresenter`;
-  - `CustomerController` e requisições de Clientes;
-  - `PosRegisterController`, `InventoryMovementController`, `StoreInventoryMovementRequest`;
-  - `User`, `Company`, `CompanyModule`, `PlatformModule`, `TenantContext`, `ActiveCompanyController`;
-  - `PlatformModuleSeeder`, `DatabaseSeeder`, `routes/web.php`, `routes/sales.php`, `routes/purchases.php`.
+  - `PosCheckout`, `PosPayment`, `PosCartRequest`, `PosRegisterController`, `routes/pos.php`;
+  - `SaleOrderController`, `FinanceTitleController`;
+  - `AppServiceProvider`, `bootstrap/app.php` (CSRF), `routes/web.php`, `routes/console.php`;
+  - `PlatformModuleSeeder`, `DatabaseSeeder`.
 - **Front-end**:
-  - `pages/inventory/{dashboard,movements,transfers,warehouses,reports,settings}.tsx`;
-  - `pages/inventory/items/{index,show}.tsx`, `pages/inventory/counts/{index,show}.tsx`;
-  - `components/inventory/*`, `types/inventory.ts`;
-  - `pages/sales/settings.tsx`, `components/purchases/quick-item-dialog.tsx`, `order-editor.tsx`, `app-sidebar.tsx`.
+  - `pages/payments/{dashboard,reconciliation,reports,settings}.tsx`, `pages/payments/charges/{index,create,show}.tsx`, `pages/root-admin/payments.tsx`;
+  - `components/payments/*`, `components/pos/pix-confirmation.tsx`, `components/pos/payment-dialog.tsx`, `pages/pos/register.tsx`;
+  - `pages/sales/orders/show.tsx`, `pages/finance/titles/show.tsx`, `app-sidebar.tsx`, `types/payments.ts`.
 - **Testes**:
-  - novos: `StockModuleTest`, `StockCountTest`, `StockIntegrationTest`, `StockDemoSeederTest`;
-  - alterados: `tests/Pest.php` (auxiliares), `PurchaseOrderTest`, `PurchaseReceiptTest`, `PosIntegrationTest`, `SalesPagesTest`.
+  - novos: `PaymentChargeTest`, `PaymentIntegrationTest`, `PaymentsDemoSeederTest`;
+  - alterado: `tests/Pest.php` (auxiliares e Efí simulada com `Http::fake` e `preventStrayRequests`).
 - **Documentação**:
-  - novos: `STOCK.md` e `OMNICHANNEL-08.md`;
-  - atualizados: `MODULES.md`, `ARCHITECTURE.md` e `INVENTORY-CORE.md`.
+  - novos: `PAYMENTS.md` e `OMNICHANNEL-09.md`;
+  - atualizados: `MODULES.md` e `ARCHITECTURE.md`.
 
-## Testes realizados
+## Testes executados
 
-- **Estoque**: 36 testes, 368 asserções. Cobrem:
-  - estoque independente, isolamento empresarial e permissões;
-  - entradas e saídas por depósito, estoque negativo configurável;
-  - transferências (idempotência e origem nunca negativa);
-  - inventários (aprovação única, saldo do momento, cancelamento);
-  - estorno único; integrações com Compras, Vendas, PDV e Financeiro;
-  - ausência de baixa duplicada com PDV e Vendas juntos;
-  - ativação posterior, preservação após desativação, CSV, relatórios, telas e demonstração.
-- **Outros**: Vendas (tela de configuração) e Compras (item simplificado com e sem controle de estoque).
-- **Regressão completa**: **471 aprovados, 2 ignorados, 0 falhas** (473 testes, 3.703 asserções).
+- **Pagamentos**: 30 testes, 295 asserções. Cobrem:
+  - Pagamentos independente, isolamento empresarial e permissões;
+  - idempotência da criação e emissão sem duplicar no provedor;
+  - webhooks duplicados e fora de ordem;
+  - webhook sem prova não confirma, token inválido e IP;
+  - confirmação, cancelamento e devolução;
+  - integrações com Vendas, Financeiro e PDV;
+  - ausência de baixa e receita duplicadas;
+  - credenciais criptografadas e fora da tela;
+  - disponibilidade do provedor, desativação e reativação;
+  - conciliação, reprocessamento, CSV, telas, RootAdmin e demonstração.
+- **Regressão completa**: **501 aprovados, 2 ignorados, 0 falhas** (503 testes, 3.998 asserções).
 - **Verificações**:
   - `npm run build` aprovado;
   - `tsc --noEmit` sem erros;
   - PHPStan do projeto inteiro com 0 erro;
   - Pint aplicado;
-  - `vp check` sem erros nos arquivos desta etapa. Outros 25 arquivos de etapas anteriores, não alterados aqui, têm apenas avisos de formatação.
+  - `vp check` sem avisos nos arquivos desta etapa.
+- **Chamadas externas**: nenhuma chamada externa nos testes (`Http::preventStrayRequests`).
 
 ## Limitações
 
-- Não houve teste em navegador (não há Chrome no ambiente). As telas foram verificadas só por build, tipos e testes de servidor.
-- Reservas e custo médio são por empresa, não por depósito. Vendas, PDV e Compras movimentam o depósito principal.
-- A importação CSV só cria mercadorias novas; não atualiza cadastros nem saldos existentes.
-- Sem lotes, validade, número de série, WMS ou etiquetas (fora do escopo).
-- A concorrência com depósitos não foi medida no MySQL 8.4, que não está disponível no ambiente.
+- Somente Pix (Efí). Boleto, cartão, Sicredi e outros provedores não foram implementados (sem integrações fictícias).
+- A consulta documentada da Efí não informa a tarifa do Pix: taxas e líquido ficam vazios.
+- O link de visualização da Efí só funciona em produção.
+- A segunda via é a impressão da página da cobrança, não um PDF próprio.
+- Devolução de cobrança de venda não altera a venda; o acerto comercial segue em Vendas.
+- Não houve teste em navegador (não há Chrome no ambiente).
 
 ## Pendências
 
-1. Homologação visual e de uso em navegador, inclusive no celular.
-2. Validação de concorrência no MySQL 8.4, quando disponível: saídas e transferências simultâneas no mesmo depósito.
-3. Escolha de depósito em Compras (recebimento), Vendas e PDV, se necessária.
-4. Formatação de 25 arquivos de front-end de etapas anteriores (somente estilo).
+1. Homologação real com uma conta Efí da empresa (credenciais, certificado e escopos) e teste das cobranças de até R$ 10,00, que a Efí confirma automaticamente em homologação.
+2. Configuração de mTLS no servidor web para o webhook da Efí (cadeia de certificados da Efí) e definição de `PAYMENTS_WEBHOOK_ENFORCE_IPS` em produção.
+3. Fila com worker em execução contínua em produção, além do agendador (`schedule:run`) para a conciliação.
+4. Homologação visual em navegador, inclusive no celular e no PDV.
+5. Decisão sobre a consolidação dos repositórios Git (proposta abaixo).
 
-## Estado do Git
+## Estado dos dois repositórios Git
 
-- `.git-local` (`main`): OMNICHANNEL-07 em `3a744c1`. Tudo da OMNICHANNEL-08 está no diretório de trabalho, **sem commit**.
-- `.git`: último commit `7ef80d4`. As OMNICHANNEL-05 a 08 estão sem commit ali.
-- Não versionados, como antes: `correio.md`, `pnpm-lock.yaml` e `yarn.lock`. Sem push, sem deploy e sem alteração em outros sistemas.
+- **`.git`**:
+  - remoto `origin` em `git@github-vetorflex:brasilgb/vetorflex.git`, ramo `main`;
+  - 2 commits: `f6724bc` e `7ef80d4`;
+  - o conteúdo de `7ef80d4` é igual ao do `8919435` do `.git-local`, mais `correio.md`, `pnpm-lock.yaml` e `yarn.lock`;
+  - as OMNICHANNEL-05 a 09 não estão nele.
+- **`.git-local`**:
+  - histórico das etapas, sem remoto: 8 commits até `408adcc` (OMNICHANNEL-08);
+  - a OMNICHANNEL-09 está no diretório de trabalho, **sem commit**.
+- **Proposta (não executada)**: manter o `.git` como oficial e registrar o estado atual num ramo novo a partir de `origin/main`, num único commit, sem reescrever histórico nem push forçado. Depois, revisar por pull request, decidir sobre os arquivos de lock e `correio.md`, e arquivar o `.git-local` como bundle fora do projeto. Detalhes e a alternativa com `cherry-pick` em `docs/OMNICHANNEL-09.md`.
 
-## Critérios (§4 a §19)
+## Critérios (§3 a §18)
 
 | Seção | Situação |
 |---|---|
-| 2. Consolidação anterior | Atendido (commit `3a744c1`) |
-| 3. RootAdmin | Atendido (já cadastrado pelo proprietário; testes aprovados) |
-| 4–5. Desacoplamento e reaproveitamento | Atendido (núcleo único; Estoque sem dependências) |
-| 6. Módulo Estoque | Atendido |
-| 7. Movimentações | Atendido |
-| 8. Inventário | Atendido |
-| 9. Integrações opcionais | Atendido |
-| 10. Ativação posterior | Atendido |
+| 2. Consolidação e Git | Atendido (commit `408adcc`; divergência documentada com proposta) |
+| 3. Princípios | Atendido |
+| 4. Central de pagamentos | Atendido |
+| 5. Provedores | Atendido (Efí Pix real conforme documentação; nenhum provedor fictício) |
+| 6. Configurações por empresa | Atendido |
+| 7. Vendas | Atendido |
+| 8. Financeiro | Atendido (taxas registradas somente quando o provedor informar) |
+| 9. PDV | Atendido |
+| 10. Webhooks e fila | Atendido (mTLS depende do servidor web) |
 | 11. Dashboard | Atendido |
-| 12. Interface | Atendido por build e renderização; sem homologação em navegador |
-| 13. Permissões e segurança | Atendido |
-| 14. RootAdmin (módulo) | Atendido |
-| 15. Pendências estruturais | Atendido |
-| 16. Demonstração | Atendido |
-| 17. Testes | Atendido; concorrência no MySQL 8.4 pendente por indisponibilidade |
-| 19. Entrega | Atendido |
+| 12. Experiência | Atendido por build e renderização; sem homologação em navegador |
+| 13. RootAdmin | Atendido |
+| 14. Permissões | Atendido |
+| 15. Demonstração | Atendido (provedor simulado) |
+| 16. Testes | Atendido |
+| 18. Documentação e entrega | Atendido |
 
 ## Parecer técnico
 
-A OMNICHANNEL-08 está implementada e verificada por testes automatizados, build, PHPStan e migração real no MariaDB, com duas ressalvas: as telas não foram observadas em navegador, e a concorrência não foi medida no MySQL 8.4. A OMNICHANNEL-09 não foi iniciada.
+A OMNICHANNEL-09 está implementada e verificada por testes automatizados (com a Efí simulada), build, PHPStan e migração real no MariaDB. A operação real depende de credenciais e homologação na Efí e de mTLS no servidor para o webhook. A OMNICHANNEL-10 não foi iniciada.

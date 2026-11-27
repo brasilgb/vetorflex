@@ -6,6 +6,8 @@ use App\Modules\Customers\Enums\CustomerPermission;
 use App\Modules\Finance\Enums\FinancePermission;
 use App\Modules\Inventory\Enums\InventoryPermission;
 use App\Modules\ModuleManager\Models\PlatformModule;
+use App\Modules\Payments\Enums\PaymentPermission;
+use App\Modules\Payments\Providers\ProviderRegistry;
 use App\Modules\Pos\Enums\PosPermission;
 use App\Modules\Products\Enums\ProductPermission;
 use App\Modules\Purchases\Enums\PurchasePermission;
@@ -27,6 +29,7 @@ class PlatformModuleSeeder extends Seeder
             ['identifier' => 'finance', 'name' => 'Financeiro', 'description' => 'Contas a pagar e a receber, baixas, contas financeiras, transferências, fluxo de caixa, conciliação e relatórios.', 'dependencies' => [], 'optional_integrations' => ['sales', 'purchases', 'pos'], 'permissions' => FinancePermission::catalog(), 'development_status' => PlatformModule::IMPLEMENTED, 'version' => '1.0.0'],
             ['identifier' => 'pos', 'name' => 'PDV — Frente de Caixa', 'description' => 'Terminais, abertura e fechamento de caixa, venda rápida com pagamentos combinados, sangrias, suprimentos, devoluções e comprovantes não fiscais.', 'dependencies' => [], 'optional_integrations' => ['customers', 'products', 'inventory', 'sales', 'finance'], 'permissions' => PosPermission::catalog(), 'development_status' => PlatformModule::IMPLEMENTED, 'version' => '1.0.0'],
             ['identifier' => 'inventory', 'name' => 'Estoque', 'description' => 'Mercadorias, saldos por depósito, entradas e saídas, transferências, inventários, alertas de estoque mínimo e relatórios.', 'dependencies' => [], 'optional_integrations' => ['products', 'purchases', 'sales', 'pos', 'finance'], 'permissions' => InventoryPermission::catalog(), 'development_status' => PlatformModule::IMPLEMENTED, 'version' => '1.0.0'],
+            ['identifier' => 'payments', 'name' => 'Pagamentos', 'description' => 'Cobranças Pix pela conta da própria empresa no provedor, link e QR Code, confirmação por webhook, conciliação, devoluções e relatórios.', 'dependencies' => [], 'optional_integrations' => ['customers', 'sales', 'finance', 'pos'], 'permissions' => PaymentPermission::catalog(), 'development_status' => PlatformModule::IMPLEMENTED, 'version' => '1.0.0'],
         ] as $sortOrder => $module) {
             // A disponibilidade comercial é decidida pelo RootAdmin e não pode ser desfeita por um novo seed.
             PlatformModule::query()->updateOrCreate(
@@ -34,5 +37,8 @@ class PlatformModuleSeeder extends Seeder
                 ['development_status' => PlatformModule::DEVELOPMENT, ...$module, 'sort_order' => $sortOrder + 1],
             );
         }
+
+        // Provedores de pagamento implementados: indisponíveis até decisão do RootAdmin, sem desfazer decisão anterior.
+        app(ProviderRegistry::class)->ensureRegistered();
     }
 }

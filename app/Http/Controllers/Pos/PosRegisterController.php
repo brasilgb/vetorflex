@@ -14,6 +14,7 @@ use App\Modules\Pos\Services\PosCashService;
 use App\Modules\Pos\Services\PosCatalog;
 use App\Modules\Pos\Services\PosCheckout;
 use App\Modules\Pos\Services\PosModule;
+use App\Modules\Pos\Services\PosPix;
 use App\Modules\Pos\Services\PosSessionService;
 use App\Modules\Pos\Support\PosPresenter;
 use Illuminate\Http\JsonResponse;
@@ -37,6 +38,7 @@ class PosRegisterController extends PosController
         private PosModule $module,
         private PosPresenter $presenter,
         private StockModule $stock,
+        private PosPix $pix,
     ) {}
 
     public function show(Request $request, PosSession $session): Response
@@ -68,6 +70,7 @@ class PosRegisterController extends PosController
                 'register_items' => $this->can($request, PosPermission::ManageSettings),
             ],
             'stockEnabled' => $this->stock->isEnabled($company),
+            'providerPix' => $this->pix->isAvailable($company),
             'today' => $this->today($request),
         ]);
     }

@@ -36,8 +36,8 @@ use Illuminate\Validation\ValidationException;
  * cálculo do total, o PDV define os pagamentos combinados (`SaleOrderService::schedulePayment`). Repetir a
  * finalização com a mesma chave devolve a venda já registrada.
  *
- * @phpstan-type PaymentRow array{method: string, amount: string, is_term?: bool, due_date?: string|null}
- * @phpstan-type Plan array{condition: PaymentCondition, method: string|null, installments: list<array{due_date: string, amount: string, method: string}>, payments: list<array{sequence: int, method: string, amount: string, tendered: string|null, change: string, is_received: bool, due_date: string, schedule_sequence: int|null}>, received: string, term: string, change: string}
+ * @phpstan-type PaymentRow array{method: string, amount: string, is_term?: bool, due_date?: string|null, payment_charge_id?: int|null}
+ * @phpstan-type Plan array{condition: PaymentCondition, method: string|null, installments: list<array{due_date: string, amount: string, method: string}>, payments: list<array{sequence: int, method: string, amount: string, tendered: string|null, change: string, is_received: bool, due_date: string, schedule_sequence: int|null, payment_charge_id: int|null, is_provider_confirmed: bool}>, received: string, term: string, change: string}
  */
 class PosCheckout
 {
@@ -48,6 +48,7 @@ class PosCheckout
         private PosAuthorizer $authorizer,
         private PosModule $module,
         private AuditService $audit,
+        private PosPix $pix,
     ) {}
 
     /**
@@ -105,6 +106,7 @@ class PosCheckout
                     return PosSale::query()->where('company_id', $company->id)->where('sale_order_id', $order->id)->firstOrFail();
                 }
 
+                $this->pix->claim($company, $plan['payments'], $order);
                 $sale = $this->record($company, $session, $operator, $order, $plan, $data, $supervisor);
                 $this->audit->record('pos.sale_completed', $company, $operator, $sale, ['order' => $order->number, 'total' => $order->total, 'session' => $session->number]);
                 PosSaleCompleted::dispatch($company->id, $sale->id, $order->id, array_map(fn (array $payment): array => [
@@ -255,7 +257,13 @@ class PosCheckout
                 throw ValidationException::withMessages(['customer_party_id' => 'Venda a prazo exige cliente identificado.']);
             }
 
-            $others[] = ['method' => $payment['method'], 'amount' => $amount, 'is_received' => ! $isTerm, 'due_date' => $dueDate];
+            $chargeId = isset($payment['payment_charge_id']) ? (int) $payment['payment_charge_id'] : null;
+
+            if ($chargeId !== null && ($payment['method'] !== PaymentMethod::Pix->value || $isTerm)) {
+                throw ValidationException::withMessages(["payments.{$index}.payment_charge_id" => 'Somente pagamentos Pix à vista podem ser confirmados pelo provedor.']);
+            }
+
+            $others[] = ['method' => $payment['method'], 'amount' => $amount, 'is_received' => ! $isTerm, 'due_date' => $dueDate, 'payment_charge_id' => $chargeId];
         }
 
         $othersTotal = array_reduce($others, fn (BigDecimal $carry, array $row): BigDecimal => $carry->plus($row['amount']), BigDecimal::zero());
@@ -303,6 +311,8 @@ class PosCheckout
                 'is_received' => $row['is_received'],
                 'due_date' => $row['due_date'],
                 'schedule_sequence' => $index + 1,
+                'payment_charge_id' => $row['payment_charge_id'] ?? null,
+                'is_provider_confirmed' => isset($row['payment_charge_id']),
             ];
         }
 

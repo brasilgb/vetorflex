@@ -53,6 +53,7 @@ class PosCartRequest extends FormRequest
             'payments.*.amount' => ['required', 'decimal:0,2', 'gt:0', 'max:9999999999999'],
             'payments.*.is_term' => ['nullable', 'boolean'],
             'payments.*.due_date' => ['nullable', 'date_format:Y-m-d'],
+            'payments.*.payment_charge_id' => ['nullable', 'integer'],
             'suspended_sale_id' => ['nullable', 'integer'],
             'label' => ['nullable', 'string', 'max:120'],
             'estimated_total' => ['nullable', ...self::MONEY],

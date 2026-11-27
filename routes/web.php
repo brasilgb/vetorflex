@@ -2,11 +2,13 @@
 
 use App\Http\Controllers\Company\CompanyMemberController;
 use App\Http\Controllers\Customers\CustomerController;
+use App\Http\Controllers\Payments\PaymentWebhookController;
 use App\Http\Controllers\RootAdmin\AdministratorController;
 use App\Http\Controllers\RootAdmin\AuditLogController;
 use App\Http\Controllers\RootAdmin\CompanyController;
 use App\Http\Controllers\RootAdmin\CompanyModuleController;
 use App\Http\Controllers\RootAdmin\ModuleCatalogController;
+use App\Http\Controllers\RootAdmin\PaymentsAdminController;
 use App\Http\Controllers\RootAdmin\PlatformOverviewController;
 use App\Http\Controllers\RootAdmin\PlatformSettingsController;
 use App\Http\Controllers\RootAdmin\PlatformUserController;
@@ -36,6 +38,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     require __DIR__.'/finance.php';
     require __DIR__.'/pos.php';
     require __DIR__.'/inventory.php';
+    require __DIR__.'/payments.php';
 
     Route::middleware('tenant')->group(function (): void {
         Route::get('company/members', [CompanyMemberController::class, 'index'])->name('company.members.index');
@@ -57,7 +60,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('companies/{company}/modules/{module}', [CompanyModuleController::class, 'destroy'])->withoutScopedBindings()->name('companies.modules.destroy');
         Route::get('modules', [ModuleCatalogController::class, 'index'])->name('modules.index');
         Route::patch('modules/{module}', [ModuleCatalogController::class, 'update'])->name('modules.update');
+        Route::get('payments', [PaymentsAdminController::class, 'index'])->name('payments.index');
+        Route::patch('payments/providers/{provider}', [PaymentsAdminController::class, 'update'])->name('payments.providers.update');
     });
 });
 
 require __DIR__.'/settings.php';
+
+// Notificações de provedores de pagamento (sem sessão, sem CSRF). O sufixo opcional atende o "/pix" da Efí.
+Route::post('webhooks/payments/{provider}/{token}/{suffix?}', PaymentWebhookController::class)
+    ->where(['provider' => '[a-z]+', 'token' => '[A-Za-z0-9]{48}', 'suffix' => 'pix'])
+    ->middleware('throttle:120,1')
+    ->name('payments.webhook');

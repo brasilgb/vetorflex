@@ -5,6 +5,9 @@ import AuthorizationFields, {
     emptyCredentials,
 } from '@/components/pos/authorization-fields';
 import NativeSelect from '@/components/native-select';
+import PixConfirmation, {
+    type PixCharge,
+} from '@/components/pos/pix-confirmation';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -25,9 +28,13 @@ export type PaymentRow = {
     amount: string;
     is_term: boolean;
     due_date: string;
+    charge: PixCharge | null;
 };
 
-/** Pagamentos combinados. Troco só em dinheiro; Pix, cartões e demais são registrados como informados pelo operador. */
+/**
+ * Pagamentos combinados. Troco só em dinheiro; cartões e demais são registrados como informados pelo operador. Com o
+ * módulo Pagamentos, o Pix pode ser gerado e confirmado pelo provedor; sem confirmação, fica como informado.
+ */
 export default function PaymentDialog({
     open,
     onOpenChange,
@@ -38,6 +45,7 @@ export default function PaymentDialog({
     processing,
     errors,
     needsAuthorization,
+    pix = null,
     onSubmit,
 }: {
     open: boolean;
@@ -49,12 +57,14 @@ export default function PaymentDialog({
     processing: boolean;
     errors: Record<string, string | undefined>;
     needsAuthorization: boolean;
+    pix?: { sessionId: number; cartKey: string } | null;
     onSubmit: (
         payments: {
             method: string;
             amount: string;
             is_term: boolean;
             due_date: string | null;
+            payment_charge_id: number | null;
         }[],
         credentials: Credentials,
     ) => void;
@@ -68,6 +78,7 @@ export default function PaymentDialog({
         amount,
         is_term: false,
         due_date: today,
+        charge: null,
     });
     const [rows, setRows] = useState<PaymentRow[]>([
         newRow(first, toDecimalInput(total, 2)),
@@ -86,6 +97,14 @@ export default function PaymentDialog({
             ? informed - totalCents
             : 0n;
     const othersExceed = others > totalCents;
+    const waitingPix = rows.some(
+        (row) =>
+            row.charge !== null &&
+            !row.charge.is_confirmed &&
+            ['pending', 'processing', 'partially_paid'].includes(
+                row.charge.status,
+            ),
+    );
     const update = (key: string, changes: Partial<PaymentRow>) =>
         setRows(
             rows.map((row) => (row.key === key ? { ...row, ...changes } : row)),
@@ -148,6 +167,11 @@ export default function PaymentDialog({
                                         row.method !== 'cash' && row.is_term
                                             ? row.due_date
                                             : null,
+                                    payment_charge_id:
+                                        row.method === 'pix' &&
+                                        row.charge?.is_confirmed
+                                            ? row.charge.id
+                                            : null,
                                 })),
                             credentials,
                         );
@@ -164,8 +188,8 @@ export default function PaymentDialog({
                 >
                     <DialogTitle>Pagamento — {formatMoney(total)}</DialogTitle>
                     <DialogDescription>
-                        Registre como o cliente pagou. Sem integração bancária,
-                        Pix, cartões e boletos ficam como informados pelo
+                        Registre como o cliente pagou. Cartões, boletos e Pix
+                        sem confirmação automática ficam como informados pelo
                         operador.
                     </DialogDescription>
                     <div className="grid grid-cols-3 gap-2 text-center text-sm">
@@ -199,6 +223,12 @@ export default function PaymentDialog({
                                 <NativeSelect
                                     aria-label={`Forma de pagamento ${index + 1}`}
                                     value={row.method}
+                                    disabled={
+                                        row.charge !== null &&
+                                        row.charge.status !== 'cancelled' &&
+                                        row.charge.status !== 'expired' &&
+                                        row.charge.status !== 'failed'
+                                    }
                                     onChange={(event) =>
                                         update(row.key, {
                                             method: event.target.value,
@@ -218,6 +248,14 @@ export default function PaymentDialog({
                                 <MoneyInput
                                     aria-label={`Valor ${index + 1}`}
                                     autoFocus={index === 0}
+                                    readOnly={
+                                        row.charge !== null &&
+                                        ![
+                                            'cancelled',
+                                            'expired',
+                                            'failed',
+                                        ].includes(row.charge.status)
+                                    }
                                     value={row.amount}
                                     onChange={(event) =>
                                         update(row.key, {
@@ -240,42 +278,59 @@ export default function PaymentDialog({
                                 >
                                     Remover
                                 </Button>
-                                {row.method !== 'cash' && (
-                                    <div className="flex flex-wrap items-center gap-3 text-sm sm:col-span-3">
-                                        <label className="flex items-center gap-2">
-                                            <Checkbox
-                                                checked={row.is_term}
-                                                onCheckedChange={(value) =>
-                                                    update(row.key, {
-                                                        is_term: value === true,
-                                                    })
-                                                }
-                                            />
-                                            A prazo (fica em aberto)
-                                        </label>
-                                        {row.is_term && (
-                                            <Input
-                                                type="date"
-                                                aria-label="Vencimento"
-                                                className="w-44"
-                                                min={today}
-                                                value={row.due_date}
-                                                onChange={(event) =>
-                                                    update(row.key, {
-                                                        due_date:
-                                                            event.target.value,
-                                                    })
-                                                }
-                                            />
-                                        )}
-                                        {row.is_term && !hasCustomer && (
-                                            <span className="text-destructive">
-                                                Selecione o cliente para vender
-                                                a prazo.
-                                            </span>
-                                        )}
-                                    </div>
-                                )}
+                                {pix !== null &&
+                                    row.method === 'pix' &&
+                                    !row.is_term &&
+                                    toCents(row.amount) > 0n && (
+                                        <PixConfirmation
+                                            sessionId={pix.sessionId}
+                                            cartKey={pix.cartKey}
+                                            amount={parseDecimal(row.amount)}
+                                            charge={row.charge}
+                                            onChange={(charge) =>
+                                                update(row.key, { charge })
+                                            }
+                                        />
+                                    )}
+                                {row.method !== 'cash' &&
+                                    row.charge === null && (
+                                        <div className="flex flex-wrap items-center gap-3 text-sm sm:col-span-3">
+                                            <label className="flex items-center gap-2">
+                                                <Checkbox
+                                                    checked={row.is_term}
+                                                    onCheckedChange={(value) =>
+                                                        update(row.key, {
+                                                            is_term:
+                                                                value === true,
+                                                        })
+                                                    }
+                                                />
+                                                A prazo (fica em aberto)
+                                            </label>
+                                            {row.is_term && (
+                                                <Input
+                                                    type="date"
+                                                    aria-label="Vencimento"
+                                                    className="w-44"
+                                                    min={today}
+                                                    value={row.due_date}
+                                                    onChange={(event) =>
+                                                        update(row.key, {
+                                                            due_date:
+                                                                event.target
+                                                                    .value,
+                                                        })
+                                                    }
+                                                />
+                                            )}
+                                            {row.is_term && !hasCustomer && (
+                                                <span className="text-destructive">
+                                                    Selecione o cliente para
+                                                    vender a prazo.
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
                             </li>
                         ))}
                     </ul>
@@ -305,6 +360,13 @@ export default function PaymentDialog({
                             </Button>
                         )}
                     </div>
+                    {waitingPix && (
+                        <p className="text-sm text-muted-foreground">
+                            Aguardando a confirmação do Pix. A venda só é
+                            finalizada depois que o provedor confirmar o
+                            pagamento.
+                        </p>
+                    )}
                     {othersExceed && (
                         <p className="text-sm text-destructive">
                             Os pagamentos fora do dinheiro superam o total.
@@ -337,7 +399,10 @@ export default function PaymentDialog({
                         <Button
                             size="lg"
                             disabled={
-                                processing || remaining > 0n || othersExceed
+                                processing ||
+                                remaining > 0n ||
+                                othersExceed ||
+                                waitingPix
                             }
                         >
                             {processing
