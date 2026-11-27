@@ -12,16 +12,16 @@ Desativar o módulo não apaga dados nem interrompe Vendas e Compras: os ouvinte
 
 `app/Modules/Finance`: `Enums`, `Models`, `Data`, `Services`, `Integrations`, `Listeners`, `Events`, `Queries`, `Reports`, `Support`. Controladores em `app/Http/Controllers/Finance`, rotas em `routes/finance.php` (`/finance`), configuração em `config/finance.php`, telas em `resources/js/pages/finance`.
 
-| Tabela | Conteúdo |
-|---|---|
-| `finance_accounts` | Caixa, conta corrente, digital, poupança, carteira e outras. Saldo inicial e data; o saldo atual nunca é gravado. |
-| `finance_categories` | Receitas e despesas, com um nível de subcategoria. Sugeridas criadas no primeiro uso, editáveis e inativáveis. |
-| `finance_titles` | Títulos a receber e a pagar: valor, ajustes, liquidado, cancelado, juros, multa, desconto, competência, vencimento, parcela e origem. |
-| `finance_settlements` | Baixas (integrais ou parciais), inclusive externas; estornadas permanecem no histórico. |
-| `finance_movements` | Livro: entrada, saída, transferência, ajuste e estorno. Nunca editado nem excluído. |
-| `finance_transfers` | Transferências entre contas da mesma empresa. |
-| `finance_recurrences` | Receitas e despesas recorrentes. |
-| `finance_renegotiations`, `finance_title_adjustments`, `finance_title_events`, `finance_attachments` | Rastreabilidade: renegociações, ajustes por integração, histórico e anexos. |
+| Tabela                                                                                               | Conteúdo                                                                                                                              |
+| ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `finance_accounts`                                                                                   | Caixa, conta corrente, digital, poupança, carteira e outras. Saldo inicial e data; o saldo atual nunca é gravado.                     |
+| `finance_categories`                                                                                 | Receitas e despesas, com um nível de subcategoria. Sugeridas criadas no primeiro uso, editáveis e inativáveis.                        |
+| `finance_titles`                                                                                     | Títulos a receber e a pagar: valor, ajustes, liquidado, cancelado, juros, multa, desconto, competência, vencimento, parcela e origem. |
+| `finance_settlements`                                                                                | Baixas (integrais ou parciais), inclusive externas; estornadas permanecem no histórico.                                               |
+| `finance_movements`                                                                                  | Livro: entrada, saída, transferência, ajuste e estorno. Nunca editado nem excluído.                                                   |
+| `finance_transfers`                                                                                  | Transferências entre contas da mesma empresa.                                                                                         |
+| `finance_recurrences`                                                                                | Receitas e despesas recorrentes.                                                                                                      |
+| `finance_renegotiations`, `finance_title_adjustments`, `finance_title_events`, `finance_attachments` | Rastreabilidade: renegociações, ajustes por integração, histórico e anexos.                                                           |
 
 Valores monetários são `decimal(15,2)` calculados com `Brick\Math` (`CommercialMath`); nenhum cálculo usa float. No navegador, os valores trafegam como texto e são somados em centavos inteiros (`lib/money.ts`). Todas as tabelas têm `company_id`, e as chaves estrangeiras compostas `(company_id, id)` impedem vínculo entre empresas no próprio banco.
 
@@ -43,9 +43,9 @@ Valores monetários são `decimal(15,2)` calculados com `Brick\Math` (`Commercia
 
 Ouvintes registrados em `AppServiceProvider` (eventos `ShouldDispatchAfterCommit`):
 
-| Origem | Eventos | Ouvinte |
-|---|---|---|
-| Vendas | `SaleConfirmed`, `SaleCancelled`, `SaleReturnRegistered`, `SaleBalanceClosed`, `SaleFulfillmentReversed` | `SyncSaleReceivables` |
+| Origem  | Eventos                                                                                                                  | Ouvinte                   |
+| ------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------- |
+| Vendas  | `SaleConfirmed`, `SaleCancelled`, `SaleReturnRegistered`, `SaleBalanceClosed`, `SaleFulfillmentReversed`                 | `SyncSaleReceivables`     |
 | Compras | `PurchaseConfirmed`, `PurchaseCancelled`, `PurchaseReturnRegistered`, `PurchaseBalanceClosed`, `PurchaseReceiptReversed` | `SyncPurchaseObligations` |
 
 Os ouvintes leem os contratos `SaleReceivableSource` e `PurchaseObligationSource`. `CommercialObligations` traduz cada um para `CommercialObligation`, e `ObligationReconciler` cria os títulos uma vez (chave por parcela) e concilia o valor devido:

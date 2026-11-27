@@ -214,7 +214,10 @@ export default function FinanceTitles({
                                 </tr>
                             )}
                             {titles.data.map((title) => (
-                                <tr key={title.id} className="border-t align-top">
+                                <tr
+                                    key={title.id}
+                                    className="border-t align-top"
+                                >
                                     <td className="p-3">
                                         <Link
                                             className="font-medium underline-offset-4 hover:underline"
@@ -258,7 +261,9 @@ export default function FinanceTitles({
                                                     size="sm"
                                                     title={title}
                                                     accounts={accounts}
-                                                    paymentMethods={paymentMethods}
+                                                    paymentMethods={
+                                                        paymentMethods
+                                                    }
                                                     today={today}
                                                 />
                                             )}

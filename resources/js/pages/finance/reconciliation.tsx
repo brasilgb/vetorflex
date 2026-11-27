@@ -39,7 +39,9 @@ export default function FinanceReconciliation({
         until: filters.until,
         pending: filters.pending,
     });
-    const pending = movements.filter((movement) => movement.reconciled_at === null);
+    const pending = movements.filter(
+        (movement) => movement.reconciled_at === null,
+    );
 
     return (
         <>
@@ -60,7 +62,10 @@ export default function FinanceReconciliation({
                             className="flex flex-wrap items-end gap-2"
                             onSubmit={(event) => {
                                 event.preventDefault();
-                                form.transform((data) => ({ ...data, pending: data.pending ? 1 : 0 }));
+                                form.transform((data) => ({
+                                    ...data,
+                                    pending: data.pending ? 1 : 0,
+                                }));
                                 form.get(index.url(), {
                                     preserveScroll: true,
                                     onSuccess: () => setSelected([]),
@@ -71,7 +76,9 @@ export default function FinanceReconciliation({
                                 aria-label="Conta"
                                 className="w-52"
                                 value={form.data.account}
-                                onChange={(event) => form.setData('account', event.target.value)}
+                                onChange={(event) =>
+                                    form.setData('account', event.target.value)
+                                }
                             >
                                 {accounts.map((item) => (
                                     <option key={item.id} value={item.id}>
@@ -84,43 +91,63 @@ export default function FinanceReconciliation({
                                 aria-label="Período: início"
                                 className="w-40"
                                 value={form.data.from}
-                                onChange={(event) => form.setData('from', event.target.value)}
+                                onChange={(event) =>
+                                    form.setData('from', event.target.value)
+                                }
                             />
                             <Input
                                 type="date"
                                 aria-label="Período: fim"
                                 className="w-40"
                                 value={form.data.until}
-                                onChange={(event) => form.setData('until', event.target.value)}
+                                onChange={(event) =>
+                                    form.setData('until', event.target.value)
+                                }
                             />
                             <label className="flex h-9 items-center gap-2 text-sm">
                                 <Checkbox
                                     checked={form.data.pending}
-                                    onCheckedChange={(value) => form.setData('pending', value === true)}
+                                    onCheckedChange={(value) =>
+                                        form.setData('pending', value === true)
+                                    }
                                 />
                                 Só pendentes
                             </label>
-                            <Button variant="outline" disabled={form.processing}>
+                            <Button
+                                variant="outline"
+                                disabled={form.processing}
+                            >
                                 Aplicar
                             </Button>
                         </form>
                         <div className="grid gap-3 sm:grid-cols-3">
                             <div className="rounded-lg border p-4">
                                 <p className="text-sm text-muted-foreground">
-                                    Saldo em {formatDate(filters.from)} (início do dia)
+                                    Saldo em {formatDate(filters.from)} (início
+                                    do dia)
                                 </p>
-                                <p className="mt-1 text-2xl font-semibold">{formatMoney(account.opening)}</p>
+                                <p className="mt-1 text-2xl font-semibold">
+                                    {formatMoney(account.opening)}
+                                </p>
                             </div>
                             <div className="rounded-lg border p-4">
                                 <p className="text-sm text-muted-foreground">
                                     Saldo em {formatDate(filters.until)}
                                 </p>
-                                <p className="mt-1 text-2xl font-semibold">{formatMoney(account.closing)}</p>
+                                <p className="mt-1 text-2xl font-semibold">
+                                    {formatMoney(account.closing)}
+                                </p>
                             </div>
                             <div className="rounded-lg border p-4">
-                                <p className="text-sm text-muted-foreground">Pendentes de conciliação</p>
-                                <p className="mt-1 text-2xl font-semibold">{account.unreconciled}</p>
-                                <p className="mt-1 text-xs text-muted-foreground">Em toda a conta</p>
+                                <p className="text-sm text-muted-foreground">
+                                    Pendentes de conciliação
+                                </p>
+                                <p className="mt-1 text-2xl font-semibold">
+                                    {account.unreconciled}
+                                </p>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                    Em toda a conta
+                                </p>
                             </div>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
@@ -139,7 +166,9 @@ export default function FinanceReconciliation({
                                     )
                                 }
                             >
-                                Marcar {selected.length > 0 ? selected.length : ''} como conciliada(s)
+                                Marcar{' '}
+                                {selected.length > 0 ? selected.length : ''}{' '}
+                                como conciliada(s)
                             </Button>
                             {pending.length > 0 && (
                                 <Button
@@ -148,11 +177,15 @@ export default function FinanceReconciliation({
                                         setSelected(
                                             selected.length === pending.length
                                                 ? []
-                                                : pending.map((movement) => movement.id),
+                                                : pending.map(
+                                                      (movement) => movement.id,
+                                                  ),
                                         )
                                     }
                                 >
-                                    {selected.length === pending.length ? 'Limpar seleção' : 'Selecionar pendentes'}
+                                    {selected.length === pending.length
+                                        ? 'Limpar seleção'
+                                        : 'Selecionar pendentes'}
                                 </Button>
                             )}
                         </div>
@@ -161,45 +194,74 @@ export default function FinanceReconciliation({
                                 <thead className="bg-muted/50 text-left">
                                     <tr>
                                         <th className="p-3">
-                                            <span className="sr-only">Selecionar</span>
+                                            <span className="sr-only">
+                                                Selecionar
+                                            </span>
                                         </th>
                                         <th className="p-3">Data</th>
                                         <th className="p-3">Descrição</th>
-                                        <th className="p-3 text-right">Valor</th>
+                                        <th className="p-3 text-right">
+                                            Valor
+                                        </th>
                                         <th className="p-3">Conciliação</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {movements.length === 0 && (
                                         <tr>
-                                            <td colSpan={5} className="p-6 text-center text-muted-foreground">
+                                            <td
+                                                colSpan={5}
+                                                className="p-6 text-center text-muted-foreground"
+                                            >
                                                 Nenhuma movimentação no período.
                                             </td>
                                         </tr>
                                     )}
                                     {movements.map((movement) => (
-                                        <tr key={movement.id} className="border-t align-top">
+                                        <tr
+                                            key={movement.id}
+                                            className="border-t align-top"
+                                        >
                                             <td className="p-3">
-                                                {movement.reconciled_at === null && (
+                                                {movement.reconciled_at ===
+                                                    null && (
                                                     <Checkbox
                                                         aria-label={`Selecionar ${movement.description}`}
-                                                        checked={selected.includes(movement.id)}
-                                                        onCheckedChange={(value) =>
+                                                        checked={selected.includes(
+                                                            movement.id,
+                                                        )}
+                                                        onCheckedChange={(
+                                                            value,
+                                                        ) =>
                                                             setSelected(
                                                                 value === true
-                                                                    ? [...selected, movement.id]
-                                                                    : selected.filter((id) => id !== movement.id),
+                                                                    ? [
+                                                                          ...selected,
+                                                                          movement.id,
+                                                                      ]
+                                                                    : selected.filter(
+                                                                          (
+                                                                              id,
+                                                                          ) =>
+                                                                              id !==
+                                                                              movement.id,
+                                                                      ),
                                                             )
                                                         }
                                                     />
                                                 )}
                                             </td>
-                                            <td className="p-3 whitespace-nowrap">{formatDate(movement.occurred_at)}</td>
+                                            <td className="p-3 whitespace-nowrap">
+                                                {formatDate(
+                                                    movement.occurred_at,
+                                                )}
+                                            </td>
                                             <td className="p-3">
                                                 {movement.description}
                                                 <span className="block text-xs text-muted-foreground">
                                                     {movement.type_label}
-                                                    {movement.method && ` · ${movement.method}`}
+                                                    {movement.method &&
+                                                        ` · ${movement.method}`}
                                                 </span>
                                             </td>
                                             <td
@@ -208,17 +270,27 @@ export default function FinanceReconciliation({
                                                 {formatMoney(movement.amount)}
                                             </td>
                                             <td className="p-3">
-                                                {movement.reconciled_at === null ? (
-                                                    <span className="text-muted-foreground">Pendente</span>
+                                                {movement.reconciled_at ===
+                                                null ? (
+                                                    <span className="text-muted-foreground">
+                                                        Pendente
+                                                    </span>
                                                 ) : (
                                                     <div className="flex flex-wrap items-center gap-2">
                                                         <span className="text-xs text-muted-foreground">
-                                                            {formatDateTime(movement.reconciled_at)} ·{' '}
-                                                            {movement.reconciled_by_name}
+                                                            {formatDateTime(
+                                                                movement.reconciled_at,
+                                                            )}{' '}
+                                                            ·{' '}
+                                                            {
+                                                                movement.reconciled_by_name
+                                                            }
                                                         </span>
                                                         <ReasonDialog
                                                             size="sm"
-                                                            url={destroy.url(movement.id)}
+                                                            url={destroy.url(
+                                                                movement.id,
+                                                            )}
                                                             title="Desfazer conciliação"
                                                             description="A movimentação volta a ficar pendente. O motivo fica registrado na auditoria."
                                                             confirmLabel="Desfazer"

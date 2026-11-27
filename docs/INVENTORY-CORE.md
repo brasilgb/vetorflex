@@ -13,13 +13,13 @@ Mecanismo compartilhado por Produtos, Compras, Vendas, PDV e Estoque. O módulo 
 
 ## Operações
 
-| Operação | Método |
-|---|---|
+| Operação        | Método                                                  |
+| --------------- | ------------------------------------------------------- |
 | Estoque inicial | `recordInitial`, somente antes da primeira movimentação |
-| Entrada e saída | `recordEntry`, `recordExit` |
-| Ajuste | `adjustTo`, recebe o saldo contado e grava a diferença |
-| Estorno | `reverse` |
-| Consulta | `balanceOf`, `balancesOf`, `averageCostOf` |
+| Entrada e saída | `recordEntry`, `recordExit`                             |
+| Ajuste          | `adjustTo`, recebe o saldo contado e grava a diferença  |
+| Estorno         | `reverse`                                               |
+| Consulta        | `balanceOf`, `balancesOf`, `averageCostOf`              |
 
 `StockOperation` leva empresa, unidade comercializável, quantidade, origem, referência, usuário, motivo, chave de idempotência, custo unitário e, nas entradas de compra, o valor total da aquisição (`entryValue`), que alimenta o custo médio (`INVENTORY-COSTING.md`). Movimentações de origem `purchase` só são corrigidas em Compras.
 
@@ -33,10 +33,10 @@ Recusado por padrão. A opção `companies.settings['inventory']['allow_negative
 
 ## Extensões previstas (não implementadas)
 
-| Necessidade | Onde estender |
-|---|---|
-| Reserva | Implementada (`InventoryReservationService`, OMNICHANNEL-05) |
-| Sincronização com canais | Evento emitido após o commit de `InventoryService::record` |
+| Necessidade              | Onde estender                                                |
+| ------------------------ | ------------------------------------------------------------ |
+| Reserva                  | Implementada (`InventoryReservationService`, OMNICHANNEL-05) |
+| Sincronização com canais | Evento emitido após o commit de `InventoryService::record`   |
 
 ## Verificação de concorrência
 

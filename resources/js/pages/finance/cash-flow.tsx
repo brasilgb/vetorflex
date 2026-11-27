@@ -121,12 +121,16 @@ export default function FinanceCashFlow({
                         <p className="text-sm text-muted-foreground">
                             Saldo inicial
                         </p>
-                        <p className={`mt-1 text-2xl font-semibold ${negative(flow.opening)}`}>
+                        <p
+                            className={`mt-1 text-2xl font-semibold ${negative(flow.opening)}`}
+                        >
                             {formatMoney(flow.opening)}
                         </p>
                     </div>
                     <div className="rounded-lg border p-4">
-                        <p className="text-sm text-muted-foreground">Entradas</p>
+                        <p className="text-sm text-muted-foreground">
+                            Entradas
+                        </p>
                         <p className="mt-1 text-2xl font-semibold">
                             {formatMoney(flow.totals.realized_in)}
                         </p>
@@ -147,7 +151,9 @@ export default function FinanceCashFlow({
                         <p className="text-sm text-muted-foreground">
                             Saldo final projetado
                         </p>
-                        <p className={`mt-1 text-2xl font-semibold ${negative(flow.closing)}`}>
+                        <p
+                            className={`mt-1 text-2xl font-semibold ${negative(flow.closing)}`}
+                        >
                             {formatMoney(flow.closing)}
                         </p>
                     </div>
@@ -216,5 +222,8 @@ export default function FinanceCashFlow({
 }
 
 FinanceCashFlow.layout = {
-    breadcrumbs: [financeBreadcrumb, { title: 'Fluxo de caixa', href: cashFlow() }],
+    breadcrumbs: [
+        financeBreadcrumb,
+        { title: 'Fluxo de caixa', href: cashFlow() },
+    ],
 };

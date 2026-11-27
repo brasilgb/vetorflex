@@ -12,28 +12,28 @@ Sem dependências comerciais (`dependencies: []`). Integra-se opcionalmente a Pr
 
 `app/Modules/Inventory`: `Data`, `Enums`, `Models`, `Services`, `Support`. Controladores em `app/Http/Controllers/Inventory/Stock`, rotas em `routes/inventory.php` (`/inventory`), configuração em `config/inventory.php`, telas em `resources/js/pages/inventory`, componentes em `resources/js/components/inventory`.
 
-| Tabela | Conteúdo |
-|---|---|
-| `inventory_warehouses` | Depósitos e localizações: nome, código único por empresa, localização, situação. Um principal por empresa (`default_company_id` único), criado sob demanda e nunca inativado. |
-| `inventory_warehouse_balances` | Saldo por depósito e unidade comercializável. A soma dos depósitos é sempre `inventory_balances.quantity`. |
-| `inventory_transfers` | Transferências numeradas entre depósitos, com chave de idempotência. |
-| `inventory_counts`, `inventory_count_items` | Inventários: depósito, situação, contagens, saldo do sistema na aprovação, diferença e movimentação de ajuste. |
-| `inventory_movements` (colunas novas) | `inventory_warehouse_id` e `warehouse_balance_after`. |
-| `product_variants.maximum_stock` | Estoque máximo opcional. |
+| Tabela                                      | Conteúdo                                                                                                                                                                      |
+| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `inventory_warehouses`                      | Depósitos e localizações: nome, código único por empresa, localização, situação. Um principal por empresa (`default_company_id` único), criado sob demanda e nunca inativado. |
+| `inventory_warehouse_balances`              | Saldo por depósito e unidade comercializável. A soma dos depósitos é sempre `inventory_balances.quantity`.                                                                    |
+| `inventory_transfers`                       | Transferências numeradas entre depósitos, com chave de idempotência.                                                                                                          |
+| `inventory_counts`, `inventory_count_items` | Inventários: depósito, situação, contagens, saldo do sistema na aprovação, diferença e movimentação de ajuste.                                                                |
+| `inventory_movements` (colunas novas)       | `inventory_warehouse_id` e `warehouse_balance_after`.                                                                                                                         |
+| `product_variants.maximum_stock`            | Estoque máximo opcional.                                                                                                                                                      |
 
 Mercadorias são as mesmas `products`/`product_variants` de Produtos, Compras, Vendas e PDV. O cadastro simplificado (`StockItems::create`) usa `ProductService`.
 
 ## Serviços
 
-| Serviço | Responsabilidade |
-|---|---|
-| `InventoryService` | Único ponto de escrita de saldo. Agora grava saldo total e por depósito sob a mesma trava; `transfer()` registra saída e entrada por item numa transação; estoque negativo configurável. |
-| `WarehouseService` | Depósito principal sob demanda, resolução e validação de depósito da empresa, cadastro. |
-| `StockModule` | Habilitação do controle, configurações (`allow_negative`, `started_at`) e data de início do controle. |
-| `StockItems` | Consulta de mercadorias com saldo total, reservado e por depósito; cadastro simplificado; estoque mínimo e máximo. |
-| `InventoryCountService` | Criação, contagem, aprovação e cancelamento de inventários. |
-| `StockReports` | Indicadores do painel e relatórios. |
-| `StockImportService` / `StockCsv` | Importação e exportação CSV. |
+| Serviço                           | Responsabilidade                                                                                                                                                                         |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `InventoryService`                | Único ponto de escrita de saldo. Agora grava saldo total e por depósito sob a mesma trava; `transfer()` registra saída e entrada por item numa transação; estoque negativo configurável. |
+| `WarehouseService`                | Depósito principal sob demanda, resolução e validação de depósito da empresa, cadastro.                                                                                                  |
+| `StockModule`                     | Habilitação do controle, configurações (`allow_negative`, `started_at`) e data de início do controle.                                                                                    |
+| `StockItems`                      | Consulta de mercadorias com saldo total, reservado e por depósito; cadastro simplificado; estoque mínimo e máximo.                                                                       |
+| `InventoryCountService`           | Criação, contagem, aprovação e cancelamento de inventários.                                                                                                                              |
+| `StockReports`                    | Indicadores do painel e relatórios.                                                                                                                                                      |
+| `StockImportService` / `StockCsv` | Importação e exportação CSV.                                                                                                                                                             |
 
 ## Regras
 

@@ -209,7 +209,8 @@ export default function FinanceDashboard({
                                                 {title.description}
                                             </Link>
                                             <span className="block text-xs text-muted-foreground">
-                                                {title.party_name ?? 'Sem pessoa'}{' '}
+                                                {title.party_name ??
+                                                    'Sem pessoa'}{' '}
                                                 ·{' '}
                                                 <span
                                                     className={
@@ -358,7 +359,10 @@ export default function FinanceDashboard({
                         ) : (
                             <ul className="space-y-2 text-sm">
                                 {data.expenses_by_category.map((row) => (
-                                    <li key={row.category} className="space-y-1">
+                                    <li
+                                        key={row.category}
+                                        className="space-y-1"
+                                    >
                                         <span className="flex justify-between gap-3">
                                             <span>{row.category}</span>
                                             <span className="whitespace-nowrap">
@@ -389,7 +393,10 @@ export default function FinanceDashboard({
                             {formatDate(today)})
                         </h3>
                         {can('finance.view_reports') && (
-                            <Link className="text-sm underline" href={cashFlow()}>
+                            <Link
+                                className="text-sm underline"
+                                href={cashFlow()}
+                            >
                                 Ver fluxo de caixa
                             </Link>
                         )}
@@ -419,14 +426,18 @@ export default function FinanceDashboard({
                                         >
                                             Sem movimentos previstos. Saldo
                                             atual:{' '}
-                                            {formatMoney(data.projection.opening)}
+                                            {formatMoney(
+                                                data.projection.opening,
+                                            )}
                                             .
                                         </td>
                                     </tr>
                                 )}
                                 {data.projection.rows.map((row) => (
                                     <tr key={row.period} className="border-t">
-                                        <td className="py-2 pr-3">{row.label}</td>
+                                        <td className="py-2 pr-3">
+                                            {row.label}
+                                        </td>
                                         <td className="py-2 pr-3 text-right whitespace-nowrap">
                                             {formatMoney(row.forecast_in)}
                                         </td>

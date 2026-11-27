@@ -35,11 +35,17 @@ function CategoryDialog({
     const initial = {
         kind: category?.kind ?? 'expense',
         name: category?.name ?? '',
-        parent_id: category?.parent_id === null || category?.parent_id === undefined ? '' : String(category.parent_id),
+        parent_id:
+            category?.parent_id === null || category?.parent_id === undefined
+                ? ''
+                : String(category.parent_id),
     };
     const form = useForm(initial);
     const parents = categories.filter(
-        (item) => item.parent_id === null && item.kind === form.data.kind && item.id !== category?.id,
+        (item) =>
+            item.parent_id === null &&
+            item.kind === form.data.kind &&
+            item.id !== category?.id,
     );
 
     return (
@@ -52,7 +58,10 @@ function CategoryDialog({
             }}
         >
             <DialogTrigger asChild>
-                <Button variant={category ? 'outline' : 'default'} size={category ? 'sm' : 'default'}>
+                <Button
+                    variant={category ? 'outline' : 'default'}
+                    size={category ? 'sm' : 'default'}
+                >
                     {category ? 'Editar' : 'Nova categoria'}
                 </Button>
             </DialogTrigger>
@@ -66,7 +75,10 @@ function CategoryDialog({
                             parent_id: data.parent_id || null,
                             is_active: category?.is_active ?? true,
                         }));
-                        const options = { preserveScroll: true, onSuccess: () => setIsOpen(false) };
+                        const options = {
+                            preserveScroll: true,
+                            onSuccess: () => setIsOpen(false),
+                        };
 
                         if (category) {
                             form.put(update.url(category.id), options);
@@ -75,17 +87,32 @@ function CategoryDialog({
                         }
                     }}
                 >
-                    <DialogTitle>{category ? `Editar ${category.name}` : 'Nova categoria'}</DialogTitle>
+                    <DialogTitle>
+                        {category
+                            ? `Editar ${category.name}`
+                            : 'Nova categoria'}
+                    </DialogTitle>
                     <DialogDescription>
-                        Categorias organizam receitas e despesas nos relatórios gerenciais.
+                        Categorias organizam receitas e despesas nos relatórios
+                        gerenciais.
                     </DialogDescription>
                     <div className="grid gap-3 sm:grid-cols-2">
-                        <FormField id="category-kind" label="Tipo" error={form.errors.kind}>
+                        <FormField
+                            id="category-kind"
+                            label="Tipo"
+                            error={form.errors.kind}
+                        >
                             <NativeSelect
                                 id="category-kind"
                                 value={form.data.kind}
                                 onChange={(event) =>
-                                    form.setData({ ...form.data, kind: event.target.value as 'income' | 'expense', parent_id: '' })
+                                    form.setData({
+                                        ...form.data,
+                                        kind: event.target.value as
+                                            | 'income'
+                                            | 'expense',
+                                        parent_id: '',
+                                    })
                                 }
                             >
                                 {kinds.map((kind) => (
@@ -103,7 +130,12 @@ function CategoryDialog({
                             <NativeSelect
                                 id="category-parent"
                                 value={form.data.parent_id}
-                                onChange={(event) => form.setData('parent_id', event.target.value)}
+                                onChange={(event) =>
+                                    form.setData(
+                                        'parent_id',
+                                        event.target.value,
+                                    )
+                                }
                             >
                                 <option value="">Nenhuma</option>
                                 {parents.map((parent) => (
@@ -113,13 +145,20 @@ function CategoryDialog({
                                 ))}
                             </NativeSelect>
                         </FormField>
-                        <FormField id="category-name" label="Nome" error={form.errors.name} className="sm:col-span-2">
+                        <FormField
+                            id="category-name"
+                            label="Nome"
+                            error={form.errors.name}
+                            className="sm:col-span-2"
+                        >
                             <Input
                                 id="category-name"
                                 required
                                 maxLength={120}
                                 value={form.data.name}
-                                onChange={(event) => form.setData('name', event.target.value)}
+                                onChange={(event) =>
+                                    form.setData('name', event.target.value)
+                                }
                             />
                         </FormField>
                     </div>
@@ -169,46 +208,88 @@ export default function FinanceSettings({
                 )}
                 <div className="grid gap-4 lg:grid-cols-2">
                     {kinds.map((kind) => {
-                        const rows = categories.filter((category) => category.kind === kind.value);
+                        const rows = categories.filter(
+                            (category) => category.kind === kind.value,
+                        );
 
                         return (
-                            <section key={kind.value} className="space-y-2 rounded-lg border p-4" aria-label={kind.label}>
+                            <section
+                                key={kind.value}
+                                className="space-y-2 rounded-lg border p-4"
+                                aria-label={kind.label}
+                            >
                                 <h3 className="font-medium">{kind.label}</h3>
                                 {rows.length === 0 ? (
-                                    <p className="text-sm text-muted-foreground">Nenhuma categoria.</p>
+                                    <p className="text-sm text-muted-foreground">
+                                        Nenhuma categoria.
+                                    </p>
                                 ) : (
                                     <ul className="divide-y text-sm">
                                         {rows
-                                            .sort((a, b) => a.full_name.localeCompare(b.full_name))
+                                            .sort((a, b) =>
+                                                a.full_name.localeCompare(
+                                                    b.full_name,
+                                                ),
+                                            )
                                             .map((category) => (
-                                                <li key={category.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-                                                    <span className={category.parent_id === null ? '' : 'pl-4 text-muted-foreground'}>
-                                                        {category.parent_id === null ? category.name : `↳ ${category.name}`}
+                                                <li
+                                                    key={category.id}
+                                                    className="flex flex-wrap items-center justify-between gap-2 py-2"
+                                                >
+                                                    <span
+                                                        className={
+                                                            category.parent_id ===
+                                                            null
+                                                                ? ''
+                                                                : 'pl-4 text-muted-foreground'
+                                                        }
+                                                    >
+                                                        {category.parent_id ===
+                                                        null
+                                                            ? category.name
+                                                            : `↳ ${category.name}`}
                                                         {!category.is_active && (
-                                                            <Badge variant="outline" className="ml-2">
+                                                            <Badge
+                                                                variant="outline"
+                                                                className="ml-2"
+                                                            >
                                                                 Inativa
                                                             </Badge>
                                                         )}
                                                     </span>
                                                     <span className="flex gap-2">
-                                                        <CategoryDialog category={category} categories={categories} kinds={kinds} />
+                                                        <CategoryDialog
+                                                            category={category}
+                                                            categories={
+                                                                categories
+                                                            }
+                                                            kinds={kinds}
+                                                        />
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
                                                             onClick={() =>
                                                                 router.put(
-                                                                    update.url(category.id),
+                                                                    update.url(
+                                                                        category.id,
+                                                                    ),
                                                                     {
                                                                         kind: category.kind,
                                                                         name: category.name,
-                                                                        parent_id: category.parent_id,
-                                                                        is_active: !category.is_active,
+                                                                        parent_id:
+                                                                            category.parent_id,
+                                                                        is_active:
+                                                                            !category.is_active,
                                                                     },
-                                                                    { preserveScroll: true },
+                                                                    {
+                                                                        preserveScroll: true,
+                                                                    },
                                                                 )
                                                             }
                                                         >
-                                                            {category.is_active ? 'Inativar' : 'Reativar'}
+                                                            {category.is_active
+                                                                ? 'Inativar'
+                                                                : 'Reativar'}
                                                         </Button>
                                                     </span>
                                                 </li>
@@ -225,5 +306,8 @@ export default function FinanceSettings({
 }
 
 FinanceSettings.layout = {
-    breadcrumbs: [financeBreadcrumb, { title: 'Configurações', href: settings() }],
+    breadcrumbs: [
+        financeBreadcrumb,
+        { title: 'Configurações', href: settings() },
+    ],
 };

@@ -54,7 +54,9 @@ function TransferDialog({
             }}
         >
             <DialogTrigger asChild>
-                <Button disabled={accounts.length < 2}>Nova transferência</Button>
+                <Button disabled={accounts.length < 2}>
+                    Nova transferência
+                </Button>
             </DialogTrigger>
             <DialogContent>
                 <form
@@ -265,7 +267,10 @@ export default function FinanceTransfers({
                                 </tr>
                             )}
                             {transfers.data.map((transfer) => (
-                                <tr key={transfer.id} className="border-t align-top">
+                                <tr
+                                    key={transfer.id}
+                                    className="border-t align-top"
+                                >
                                     <td className="p-3 whitespace-nowrap">
                                         {formatDate(transfer.transferred_at)}
                                     </td>
@@ -301,7 +306,9 @@ export default function FinanceTransfers({
                                             transfer.status === 'confirmed' && (
                                                 <ReasonDialog
                                                     size="sm"
-                                                    url={reverse.url(transfer.id)}
+                                                    url={reverse.url(
+                                                        transfer.id,
+                                                    )}
                                                     title="Estornar transferência"
                                                     description="Gera os lançamentos inversos nas duas contas. A transferência original fica no histórico."
                                                     confirmLabel="Estornar"
@@ -322,5 +329,8 @@ export default function FinanceTransfers({
 }
 
 FinanceTransfers.layout = {
-    breadcrumbs: [financeBreadcrumb, { title: 'Transferências', href: index() }],
+    breadcrumbs: [
+        financeBreadcrumb,
+        { title: 'Transferências', href: index() },
+    ],
 };

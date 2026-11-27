@@ -4,11 +4,11 @@ Identificador `products`, versão 1.0.0. Independente de Clientes, Compras, Vend
 
 ## Estrutura
 
-| Domínio | Tabelas |
-|---|---|
-| Catálogo | `products`, `product_categories`, `product_brands`, `units_of_measure` |
+| Domínio                 | Tabelas                                                                                            |
+| ----------------------- | -------------------------------------------------------------------------------------------------- |
+| Catálogo                | `products`, `product_categories`, `product_brands`, `units_of_measure`                             |
 | Unidade comercializável | `product_variants`, `product_attributes`, `product_attribute_values`, `product_variant_attributes` |
-| Apoio | `product_images`, `product_price_changes`, `product_imports` |
+| Apoio                   | `product_images`, `product_price_changes`, `product_imports`                                       |
 
 Todas têm `company_id`. Chaves estrangeiras compostas com `company_id` impedem associação entre empresas, e o middleware `tenant.records` responde 404 a registros de outra empresa antes da validação.
 
@@ -27,17 +27,17 @@ Variações não são excluídas, apenas inativadas. `combination_key` impede co
 
 ## Permissões
 
-| Permissão | Efeito |
-|---|---|
-| `products.view` | Catálogo |
-| `products.create`, `update`, `deactivate`, `reactivate` | Cadastro; `update` inclui variações e imagens |
-| `products.import`, `export` | CSV |
-| `products.manage_categories`, `manage_brands`, `manage_units` | Cadastros auxiliares |
-| `products.view_cost` | Custo, margem, markup e histórico de custo |
-| `products.manage_cost` | Alterar custo; exige também `view_cost` |
-| `products.manage_prices` | Alterar preço de venda e promocional |
-| `products.view_inventory` | Saldos, movimentações e indicadores de estoque |
-| `products.adjust_inventory` | Movimentar e estornar |
+| Permissão                                                     | Efeito                                         |
+| ------------------------------------------------------------- | ---------------------------------------------- |
+| `products.view`                                               | Catálogo                                       |
+| `products.create`, `update`, `deactivate`, `reactivate`       | Cadastro; `update` inclui variações e imagens  |
+| `products.import`, `export`                                   | CSV                                            |
+| `products.manage_categories`, `manage_brands`, `manage_units` | Cadastros auxiliares                           |
+| `products.view_cost`                                          | Custo, margem, markup e histórico de custo     |
+| `products.manage_cost`                                        | Alterar custo; exige também `view_cost`        |
+| `products.manage_prices`                                      | Alterar preço de venda e promocional           |
+| `products.view_inventory`                                     | Saldos, movimentações e indicadores de estoque |
+| `products.adjust_inventory`                                   | Movimentar e estornar                          |
 
 Custos e saldos não são enviados ao navegador sem permissão. Preços e custos enviados por quem não pode alterá-los são descartados, preservando o valor gravado. O valor estimado do estoque exige `view_inventory` e `view_cost`.
 
@@ -70,23 +70,23 @@ Disco privado, em `companies/{empresa}/products/{produto}`, servidas por rota au
 
 ## Contratos internos
 
-| Necessidade | Contrato |
-|---|---|
-| Produtos ativos | `ProductCatalog::activeProducts` |
+| Necessidade                                    | Contrato                                                             |
+| ---------------------------------------------- | -------------------------------------------------------------------- |
+| Produtos ativos                                | `ProductCatalog::activeProducts`                                     |
 | Unidades comercializáveis e leitura por código | `ProductCatalog::sellableUnits`, `searchSellableUnits`, `findByCode` |
-| Preços | `ProductCatalog::pricesOf` |
-| Saldo | `ProductCatalog::balanceOf` |
+| Preços                                         | `ProductCatalog::pricesOf`                                           |
+| Saldo                                          | `ProductCatalog::balanceOf`                                          |
 
 Movimentações: `INVENTORY-CORE.md`.
 
 ## Pontos de extensão omnichannel (não implementados)
 
-| Necessidade | Onde estender |
-|---|---|
-| Identificadores externos e mapeamento | Tabelas do domínio de integrações, ligadas a `products` e `product_variants` |
-| Publicações por canal | Domínio de integrações; nada específico de canal em `products` |
-| Sincronização de preços e catálogo | Evento emitido após o commit de `ProductService` |
-| Sincronização e reserva de estoque | `INVENTORY-CORE.md` |
-| Importação de pedidos | Módulo Vendas, com chave de idempotência derivada do pedido externo |
-| Origem comercial | `MovementOrigin` identifica o domínio; o canal fica no domínio de integrações |
-| Imagens em catálogos externos | `products.images.disk` e URLs temporárias |
+| Necessidade                           | Onde estender                                                                 |
+| ------------------------------------- | ----------------------------------------------------------------------------- |
+| Identificadores externos e mapeamento | Tabelas do domínio de integrações, ligadas a `products` e `product_variants`  |
+| Publicações por canal                 | Domínio de integrações; nada específico de canal em `products`                |
+| Sincronização de preços e catálogo    | Evento emitido após o commit de `ProductService`                              |
+| Sincronização e reserva de estoque    | `INVENTORY-CORE.md`                                                           |
+| Importação de pedidos                 | Módulo Vendas, com chave de idempotência derivada do pedido externo           |
+| Origem comercial                      | `MovementOrigin` identifica o domínio; o canal fica no domínio de integrações |
+| Imagens em catálogos externos         | `products.images.disk` e URLs temporárias                                     |

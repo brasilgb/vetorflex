@@ -15,7 +15,12 @@ export default function PlatformAudit({
     companies,
 }: {
     logs: Paginated<PlatformAuditEntry>;
-    filters: { event: string | null; company: number | null; from: string | null; until: string | null };
+    filters: {
+        event: string | null;
+        company: number | null;
+        from: string | null;
+        until: string | null;
+    };
     companies: FinanceOption[];
 }) {
     const { formatDateTime } = useTenant();
@@ -39,7 +44,13 @@ export default function PlatformAudit({
                     className="flex flex-wrap items-end gap-2"
                     onSubmit={(event) => {
                         event.preventDefault();
-                        form.transform((data) => Object.fromEntries(Object.entries(data).filter(([, value]) => value !== '')));
+                        form.transform((data) =>
+                            Object.fromEntries(
+                                Object.entries(data).filter(
+                                    ([, value]) => value !== '',
+                                ),
+                            ),
+                        );
                         form.get(index.url(), { preserveScroll: true });
                     }}
                 >
@@ -48,13 +59,17 @@ export default function PlatformAudit({
                         placeholder="Evento, ex.: finance. ou company."
                         className="w-full sm:w-64"
                         value={form.data.event}
-                        onChange={(event) => form.setData('event', event.target.value)}
+                        onChange={(event) =>
+                            form.setData('event', event.target.value)
+                        }
                     />
                     <NativeSelect
                         aria-label="Empresa"
                         className="w-52"
                         value={form.data.company}
-                        onChange={(event) => form.setData('company', event.target.value)}
+                        onChange={(event) =>
+                            form.setData('company', event.target.value)
+                        }
                     >
                         <option value="">Todas as empresas</option>
                         {companies.map((company) => (
@@ -63,8 +78,24 @@ export default function PlatformAudit({
                             </option>
                         ))}
                     </NativeSelect>
-                    <Input type="date" aria-label="A partir de" className="w-40" value={form.data.from} onChange={(event) => form.setData('from', event.target.value)} />
-                    <Input type="date" aria-label="Até" className="w-40" value={form.data.until} onChange={(event) => form.setData('until', event.target.value)} />
+                    <Input
+                        type="date"
+                        aria-label="A partir de"
+                        className="w-40"
+                        value={form.data.from}
+                        onChange={(event) =>
+                            form.setData('from', event.target.value)
+                        }
+                    />
+                    <Input
+                        type="date"
+                        aria-label="Até"
+                        className="w-40"
+                        value={form.data.until}
+                        onChange={(event) =>
+                            form.setData('until', event.target.value)
+                        }
+                    />
                     <Button variant="outline" disabled={form.processing}>
                         Filtrar
                     </Button>
@@ -83,20 +114,33 @@ export default function PlatformAudit({
                         <tbody>
                             {logs.data.length === 0 && (
                                 <tr>
-                                    <td colSpan={5} className="p-6 text-center text-muted-foreground">
-                                        Nenhum registro para os filtros escolhidos.
+                                    <td
+                                        colSpan={5}
+                                        className="p-6 text-center text-muted-foreground"
+                                    >
+                                        Nenhum registro para os filtros
+                                        escolhidos.
                                     </td>
                                 </tr>
                             )}
                             {logs.data.map((log) => (
                                 <tr key={log.id} className="border-t align-top">
-                                    <td className="p-3 whitespace-nowrap">{formatDateTime(log.occurred_at)}</td>
-                                    <td className="p-3 font-mono text-xs">{log.event}</td>
-                                    <td className="p-3">{log.user ?? 'Sistema'}</td>
-                                    <td className="p-3">{log.company ?? '—'}</td>
+                                    <td className="p-3 whitespace-nowrap">
+                                        {formatDateTime(log.occurred_at)}
+                                    </td>
+                                    <td className="p-3 font-mono text-xs">
+                                        {log.event}
+                                    </td>
+                                    <td className="p-3">
+                                        {log.user ?? 'Sistema'}
+                                    </td>
+                                    <td className="p-3">
+                                        {log.company ?? '—'}
+                                    </td>
                                     <td className="p-3 text-xs text-muted-foreground">
                                         {log.subject}
-                                        {Object.keys(log.context).length > 0 && (
+                                        {Object.keys(log.context).length >
+                                            0 && (
                                             <code className="mt-1 block max-w-md break-all whitespace-pre-wrap">
                                                 {JSON.stringify(log.context)}
                                             </code>

@@ -78,7 +78,8 @@ function RecurrenceDialog({
                             ...data,
                             amount: parseDecimal(data.amount),
                             end_date: data.end_date || null,
-                            finance_category_id: data.finance_category_id || null,
+                            finance_category_id:
+                                data.finance_category_id || null,
                             party_id: party?.id ?? null,
                         }));
                         form.post(store.url(), {
@@ -87,14 +88,20 @@ function RecurrenceDialog({
                         });
                     }}
                 >
-                    <DialogTitle>Nova receita ou despesa recorrente</DialogTitle>
+                    <DialogTitle>
+                        Nova receita ou despesa recorrente
+                    </DialogTitle>
                     <DialogDescription>
                         Os títulos são gerados automaticamente com antecedência,
                         sem baixa. Você registra o pagamento ou recebimento de
                         cada um.
                     </DialogDescription>
                     <div className="grid gap-3 sm:grid-cols-2">
-                        <FormField id="recurrence-kind" label="Tipo" error={form.errors.kind}>
+                        <FormField
+                            id="recurrence-kind"
+                            label="Tipo"
+                            error={form.errors.kind}
+                        >
                             <NativeSelect
                                 id="recurrence-kind"
                                 value={form.data.kind}
@@ -107,10 +114,14 @@ function RecurrenceDialog({
                                 }
                             >
                                 {kinds.includes('payable') && (
-                                    <option value="payable">Despesa (a pagar)</option>
+                                    <option value="payable">
+                                        Despesa (a pagar)
+                                    </option>
                                 )}
                                 {kinds.includes('receivable') && (
-                                    <option value="receivable">Receita (a receber)</option>
+                                    <option value="receivable">
+                                        Receita (a receber)
+                                    </option>
                                 )}
                             </NativeSelect>
                         </FormField>
@@ -123,11 +134,17 @@ function RecurrenceDialog({
                                 id="recurrence-frequency"
                                 value={form.data.frequency}
                                 onChange={(event) =>
-                                    form.setData('frequency', event.target.value)
+                                    form.setData(
+                                        'frequency',
+                                        event.target.value,
+                                    )
                                 }
                             >
                                 {frequencies.map((frequency) => (
-                                    <option key={frequency.value} value={frequency.value}>
+                                    <option
+                                        key={frequency.value}
+                                        value={frequency.value}
+                                    >
                                         {frequency.label}
                                     </option>
                                 ))}
@@ -146,11 +163,18 @@ function RecurrenceDialog({
                                 placeholder="Ex.: Aluguel da loja"
                                 value={form.data.description}
                                 onChange={(event) =>
-                                    form.setData('description', event.target.value)
+                                    form.setData(
+                                        'description',
+                                        event.target.value,
+                                    )
                                 }
                             />
                         </FormField>
-                        <FormField id="recurrence-amount" label="Valor" error={form.errors.amount}>
+                        <FormField
+                            id="recurrence-amount"
+                            label="Valor"
+                            error={form.errors.amount}
+                        >
                             <MoneyInput
                                 id="recurrence-amount"
                                 required
@@ -169,14 +193,23 @@ function RecurrenceDialog({
                                 id="recurrence-category"
                                 value={form.data.finance_category_id}
                                 onChange={(event) =>
-                                    form.setData('finance_category_id', event.target.value)
+                                    form.setData(
+                                        'finance_category_id',
+                                        event.target.value,
+                                    )
                                 }
                             >
                                 <option value="">Sem categoria</option>
                                 {categories
-                                    .filter((category) => category.kind === categoryKind)
+                                    .filter(
+                                        (category) =>
+                                            category.kind === categoryKind,
+                                    )
                                     .map((category) => (
-                                        <option key={category.id} value={category.id}>
+                                        <option
+                                            key={category.id}
+                                            value={category.id}
+                                        >
                                             {category.full_name}
                                         </option>
                                     ))}
@@ -193,7 +226,10 @@ function RecurrenceDialog({
                                 required
                                 value={form.data.start_date}
                                 onChange={(event) =>
-                                    form.setData('start_date', event.target.value)
+                                    form.setData(
+                                        'start_date',
+                                        event.target.value,
+                                    )
                                 }
                             />
                         </FormField>
@@ -286,7 +322,10 @@ export default function FinanceRecurrences({
                         <tbody>
                             {recurrences.length === 0 && (
                                 <tr>
-                                    <td colSpan={6} className="p-6 text-center text-muted-foreground">
+                                    <td
+                                        colSpan={6}
+                                        className="p-6 text-center text-muted-foreground"
+                                    >
                                         Nenhuma recorrência cadastrada. Cadastre
                                         despesas fixas para vê-las no fluxo de
                                         caixa previsto.
@@ -294,23 +333,36 @@ export default function FinanceRecurrences({
                                 </tr>
                             )}
                             {recurrences.map((recurrence) => (
-                                <tr key={recurrence.id} className="border-t align-top">
+                                <tr
+                                    key={recurrence.id}
+                                    className="border-t align-top"
+                                >
                                     <td className="p-3">
                                         {recurrence.description}
                                         <span className="block text-xs text-muted-foreground">
-                                            {recurrence.kind === 'receivable' ? 'Receita' : 'Despesa'}
-                                            {recurrence.category && ` · ${recurrence.category}`}
+                                            {recurrence.kind === 'receivable'
+                                                ? 'Receita'
+                                                : 'Despesa'}
+                                            {recurrence.category &&
+                                                ` · ${recurrence.category}`}
                                             {` · ${recurrence.titles_count} título(s) gerado(s)`}
                                         </span>
                                     </td>
-                                    <td className="p-3">{recurrence.frequency_label}</td>
+                                    <td className="p-3">
+                                        {recurrence.frequency_label}
+                                    </td>
                                     <td className="p-3 whitespace-nowrap">
                                         {formatDate(recurrence.start_date)}
                                         {' a '}
-                                        {recurrence.end_date ? formatDate(recurrence.end_date) : 'sem fim'}
+                                        {recurrence.end_date
+                                            ? formatDate(recurrence.end_date)
+                                            : 'sem fim'}
                                         {recurrence.generated_until && (
                                             <span className="block text-xs text-muted-foreground">
-                                                Gerado até {formatDate(recurrence.generated_until)}
+                                                Gerado até{' '}
+                                                {formatDate(
+                                                    recurrence.generated_until,
+                                                )}
                                             </span>
                                         )}
                                     </td>
@@ -318,8 +370,16 @@ export default function FinanceRecurrences({
                                         {formatMoney(recurrence.amount)}
                                     </td>
                                     <td className="p-3">
-                                        <Badge variant={recurrence.ended_at ? 'outline' : 'secondary'}>
-                                            {recurrence.ended_at ? 'Encerrada' : 'Ativa'}
+                                        <Badge
+                                            variant={
+                                                recurrence.ended_at
+                                                    ? 'outline'
+                                                    : 'secondary'
+                                            }
+                                        >
+                                            {recurrence.ended_at
+                                                ? 'Encerrada'
+                                                : 'Ativa'}
                                         </Badge>
                                     </td>
                                     <td className="p-3 text-right">

@@ -4,12 +4,12 @@ Custo médio ponderado móvel por unidade comercializável, calculado por `Avera
 
 ## Quatro valores distintos
 
-| Valor | Onde fica | Origem | Quem vê |
-|---|---|---|---|
-| Custo cadastrado | `product_variants.cost_price` | Informado no cadastro do produto | `products.view_cost` |
-| Último custo de compra | `supplier_products.last_cost` e `purchase_receipt_items.purchase_unit_cost` | Preço negociado, líquido do desconto do item, do último recebimento confirmado daquele fornecedor | `purchases.view_cost` |
-| Custo efetivo da aquisição | `purchase_receipt_items.unit_cost` e `acquisition_total` | Preço negociado mais o rateio de frete, seguro e despesas, menos o desconto geral | `purchases.view_cost` |
-| Custo médio do estoque | `inventory_balances.average_cost` | Recebimentos confirmados | `products.view_cost` (ficha do produto) |
+| Valor                      | Onde fica                                                                   | Origem                                                                                            | Quem vê                                 |
+| -------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| Custo cadastrado           | `product_variants.cost_price`                                               | Informado no cadastro do produto                                                                  | `products.view_cost`                    |
+| Último custo de compra     | `supplier_products.last_cost` e `purchase_receipt_items.purchase_unit_cost` | Preço negociado, líquido do desconto do item, do último recebimento confirmado daquele fornecedor | `purchases.view_cost`                   |
+| Custo efetivo da aquisição | `purchase_receipt_items.unit_cost` e `acquisition_total`                    | Preço negociado mais o rateio de frete, seguro e despesas, menos o desconto geral                 | `purchases.view_cost`                   |
+| Custo médio do estoque     | `inventory_balances.average_cost`                                           | Recebimentos confirmados                                                                          | `products.view_cost` (ficha do produto) |
 
 O preço de venda nunca é alterado por Compras.
 

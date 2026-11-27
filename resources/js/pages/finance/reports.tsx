@@ -57,7 +57,8 @@ export default function FinanceReports({
         from: filters.from,
         until: filters.until,
         regime: filters.regime,
-        account_id: filters.account_id === null ? '' : String(filters.account_id),
+        account_id:
+            filters.account_id === null ? '' : String(filters.account_id),
         granularity: filters.granularity,
     });
     const query = Object.fromEntries(
@@ -83,7 +84,11 @@ export default function FinanceReports({
                                 <a href={csv.url({ query })}>Exportar CSV</a>
                             </Button>
                             <Button variant="outline" asChild>
-                                <a href={pdf.url({ query })} target="_blank" rel="noopener">
+                                <a
+                                    href={pdf.url({ query })}
+                                    target="_blank"
+                                    rel="noopener"
+                                >
                                     Gerar PDF
                                 </a>
                             </Button>
@@ -95,7 +100,11 @@ export default function FinanceReports({
                     onSubmit={(event) => {
                         event.preventDefault();
                         form.transform((data) =>
-                            Object.fromEntries(Object.entries(data).filter(([, value]) => value !== '')),
+                            Object.fromEntries(
+                                Object.entries(data).filter(
+                                    ([, value]) => value !== '',
+                                ),
+                            ),
                         );
                         form.get(index.url(), { preserveScroll: true });
                     }}
@@ -104,7 +113,9 @@ export default function FinanceReports({
                         aria-label="Relatório"
                         className="w-64"
                         value={form.data.type}
-                        onChange={(event) => form.setData('type', event.target.value)}
+                        onChange={(event) =>
+                            form.setData('type', event.target.value)
+                        }
                     >
                         {types.map((type) => (
                             <option key={type.value} value={type.value}>
@@ -119,14 +130,18 @@ export default function FinanceReports({
                                 aria-label="Período: início"
                                 className="w-40"
                                 value={form.data.from}
-                                onChange={(event) => form.setData('from', event.target.value)}
+                                onChange={(event) =>
+                                    form.setData('from', event.target.value)
+                                }
                             />
                             <Input
                                 type="date"
                                 aria-label="Período: fim"
                                 className="w-40"
                                 value={form.data.until}
-                                onChange={(event) => form.setData('until', event.target.value)}
+                                onChange={(event) =>
+                                    form.setData('until', event.target.value)
+                                }
                             />
                         </>
                     )}
@@ -135,10 +150,14 @@ export default function FinanceReports({
                             aria-label="Regime"
                             className="w-44"
                             value={form.data.regime}
-                            onChange={(event) => form.setData('regime', event.target.value)}
+                            onChange={(event) =>
+                                form.setData('regime', event.target.value)
+                            }
                         >
                             <option value="cash">Regime de caixa</option>
-                            <option value="competence">Regime de competência</option>
+                            <option value="competence">
+                                Regime de competência
+                            </option>
                         </NativeSelect>
                     )}
                     {USES_ACCOUNT.includes(form.data.type) && (
@@ -146,7 +165,9 @@ export default function FinanceReports({
                             aria-label="Conta"
                             className="w-48"
                             value={form.data.account_id}
-                            onChange={(event) => form.setData('account_id', event.target.value)}
+                            onChange={(event) =>
+                                form.setData('account_id', event.target.value)
+                            }
                         >
                             <option value="">Todas as contas</option>
                             {accounts.map((account) => (
@@ -161,7 +182,9 @@ export default function FinanceReports({
                             aria-label="Agrupamento"
                             className="w-36"
                             value={form.data.granularity}
-                            onChange={(event) => form.setData('granularity', event.target.value)}
+                            onChange={(event) =>
+                                form.setData('granularity', event.target.value)
+                            }
                         >
                             <option value="day">Diário</option>
                             <option value="week">Semanal</option>
@@ -175,7 +198,9 @@ export default function FinanceReports({
                 <section className="space-y-3" aria-label={report.title}>
                     <div>
                         <h3 className="font-medium">{report.title}</h3>
-                        <p className="text-sm text-muted-foreground">{report.subtitle}</p>
+                        <p className="text-sm text-muted-foreground">
+                            {report.subtitle}
+                        </p>
                     </div>
                     <div className="overflow-x-auto rounded-lg border">
                         <table className="w-full text-sm">
@@ -198,7 +223,8 @@ export default function FinanceReports({
                                             colSpan={report.columns.length}
                                             className="p-6 text-center text-muted-foreground"
                                         >
-                                            Nenhum registro para os filtros escolhidos.
+                                            Nenhum registro para os filtros
+                                            escolhidos.
                                         </td>
                                     </tr>
                                 )}
@@ -211,7 +237,10 @@ export default function FinanceReports({
                                             >
                                                 {display(
                                                     row[column.key],
-                                                    column.align === 'right' && !COUNT_COLUMNS.includes(column.key),
+                                                    column.align === 'right' &&
+                                                        !COUNT_COLUMNS.includes(
+                                                            column.key,
+                                                        ),
                                                 )}
                                             </td>
                                         ))}
@@ -222,12 +251,21 @@ export default function FinanceReports({
                     </div>
                     {Object.keys(report.totals).length > 0 && (
                         <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                            {Object.entries(report.totals).map(([key, value]) => (
-                                <div key={key} className="rounded-lg border p-3">
-                                    <dt className="text-sm text-muted-foreground">{totalLabels[key] ?? key}</dt>
-                                    <dd className="text-lg font-semibold">{formatMoney(value)}</dd>
-                                </div>
-                            ))}
+                            {Object.entries(report.totals).map(
+                                ([key, value]) => (
+                                    <div
+                                        key={key}
+                                        className="rounded-lg border p-3"
+                                    >
+                                        <dt className="text-sm text-muted-foreground">
+                                            {totalLabels[key] ?? key}
+                                        </dt>
+                                        <dd className="text-lg font-semibold">
+                                            {formatMoney(value)}
+                                        </dd>
+                                    </div>
+                                ),
+                            )}
                         </dl>
                     )}
                 </section>

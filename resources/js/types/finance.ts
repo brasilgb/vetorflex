@@ -11,7 +11,11 @@ export type FinanceCategory = {
     is_active: boolean;
 };
 
-export type FinanceParty = { id: number; name: string; document: string | null };
+export type FinanceParty = {
+    id: number;
+    name: string;
+    document: string | null;
+};
 
 export type FinanceTitleSummary = {
     id: number;

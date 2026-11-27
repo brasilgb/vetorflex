@@ -4,7 +4,11 @@ import { home, settings as settingsRoute } from '@/routes/root-admin';
 
 type Setting = { group: string; label: string; value: string | null };
 
-export default function PlatformSettings({ settings }: { settings: Setting[] }) {
+export default function PlatformSettings({
+    settings,
+}: {
+    settings: Setting[];
+}) {
     const groups = [...new Set(settings.map((setting) => setting.group))];
 
     return (
@@ -18,15 +22,28 @@ export default function PlatformSettings({ settings }: { settings: Setting[] }) 
                 />
                 <div className="grid gap-4 lg:grid-cols-2">
                     {groups.map((group) => (
-                        <section key={group} className="space-y-2 rounded-lg border p-4" aria-label={group}>
+                        <section
+                            key={group}
+                            className="space-y-2 rounded-lg border p-4"
+                            aria-label={group}
+                        >
                             <h3 className="font-medium">{group}</h3>
                             <dl className="divide-y text-sm">
                                 {settings
-                                    .filter((setting) => setting.group === group)
+                                    .filter(
+                                        (setting) => setting.group === group,
+                                    )
                                     .map((setting) => (
-                                        <div key={setting.label} className="flex flex-wrap justify-between gap-2 py-2">
-                                            <dt className="text-muted-foreground">{setting.label}</dt>
-                                            <dd className="text-right break-all">{setting.value ?? '—'}</dd>
+                                        <div
+                                            key={setting.label}
+                                            className="flex flex-wrap justify-between gap-2 py-2"
+                                        >
+                                            <dt className="text-muted-foreground">
+                                                {setting.label}
+                                            </dt>
+                                            <dd className="text-right break-all">
+                                                {setting.value ?? '—'}
+                                            </dd>
                                         </div>
                                     ))}
                             </dl>

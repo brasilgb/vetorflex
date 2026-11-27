@@ -11,7 +11,12 @@ import { formatDate } from '@/lib/date';
 import { formatMoney } from '@/lib/decimal';
 import { exportMethod, index } from '@/routes/finance/movements';
 import { show } from '@/routes/finance/titles';
-import type { FinanceMovement, FinanceOption, Option, Paginated } from '@/types';
+import type {
+    FinanceMovement,
+    FinanceOption,
+    Option,
+    Paginated,
+} from '@/types';
 
 type Filters = {
     account: number | null;
@@ -160,7 +165,10 @@ export default function FinanceMovements({
                                 </tr>
                             )}
                             {movements.data.map((movement) => (
-                                <tr key={movement.id} className="border-t align-top">
+                                <tr
+                                    key={movement.id}
+                                    className="border-t align-top"
+                                >
                                     <td className="p-3 whitespace-nowrap">
                                         {formatDate(movement.occurred_at)}
                                     </td>

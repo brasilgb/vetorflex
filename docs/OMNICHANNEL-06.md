@@ -21,13 +21,13 @@ Menu **RootAdmin**: Visão geral, Empresas, Usuários, Catálogo de módulos, Ad
 - **Acesso**: login único em `/login`. O RootAdmin vai para `/rootadmin`; os demais usuários, para `/dashboard` (`LoginResponse`). O login é limitado a 5 tentativas por minuto por e-mail e IP. A troca de senha fica em Configurações › Segurança.
 - **Proteção**: todas as rotas `/rootadmin` passam pelo middleware `root.admin` (`EnsureRootAdmin`, 403 para usuários empresariais). O RootAdmin não precisa de empresa nem de módulos. As rotas empresariais continuam exigindo vínculo ativo com a empresa, e o RootAdmin não ganha acesso empresarial por elas.
 - **Áreas**:
-  - Visão geral: contagens reais de empresas, usuários, administradores e empresas por módulo, além da atividade recente.
-  - Empresas: cadastro, edição, suspensão e reativação com motivo, ativação de módulos com dependências e integrações e consulta de usuários.
-  - Usuários: consulta com vínculos e papéis.
-  - Catálogo: disponibilidade comercial.
-  - Administradores: revogação com motivo, nunca do último ativo, com trava de concorrência.
-  - Auditoria: filtros por evento, empresa e período.
-  - Configurações: consulta da configuração em uso, sem segredos.
+    - Visão geral: contagens reais de empresas, usuários, administradores e empresas por módulo, além da atividade recente.
+    - Empresas: cadastro, edição, suspensão e reativação com motivo, ativação de módulos com dependências e integrações e consulta de usuários.
+    - Usuários: consulta com vínculos e papéis.
+    - Catálogo: disponibilidade comercial.
+    - Administradores: revogação com motivo, nunca do último ativo, com trava de concorrência.
+    - Auditoria: filtros por evento, empresa e período.
+    - Configurações: consulta da configuração em uso, sem segredos.
 - **Auditoria**: `company.created`, `company.updated`, `company.suspended`, `company.reactivated`, `module.activated`, `module.deactivated`, `module.availability_changed`, `root_admin.created` e `root_admin.revoked`.
 - **Pendências**: configurações da plataforma editáveis em tela, cadastro de administradores pelo painel, bloqueio individual de usuários e indicadores de faturamento (dependem do módulo Billing).
 

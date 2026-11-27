@@ -12,16 +12,16 @@ Entrega: módulo Pagamentos 1.0.0 (`PAYMENTS.md`) com Pix pela Efí, independent
 ## Ajustes em recursos compartilhados
 
 - **PDV**:
-  - `PosCheckout::plan` aceita `payment_charge_id` em pagamentos Pix à vista;
-  - `PosPix::claim` confirma a cobrança sob trava na finalização;
-  - `pos_payments` ganhou `payment_charge_id` (único) e `is_provider_confirmed`;
-  - a tela recebe `providerPix`.
+    - `PosCheckout::plan` aceita `payment_charge_id` em pagamentos Pix à vista;
+    - `PosPix::claim` confirma a cobrança sob trava na finalização;
+    - `pos_payments` ganhou `payment_charge_id` (único) e `is_provider_confirmed`;
+    - a tela recebe `providerPix`.
 - **Financeiro**: novo ouvinte `SyncPaymentOperations`, registrado no `AppServiceProvider`.
 - **Vendas e Financeiro**: as fichas recebem `paymentCharges` (`ChargeDirectory`), nulo sem o módulo.
 - **Infraestrutura**:
-  - exceção de CSRF só para `webhooks/payments/*`;
-  - comando agendado `payments:reconcile`;
-  - `config/payments.php`.
+    - exceção de CSRF só para `webhooks/payments/*`;
+    - comando agendado `payments:reconcile`;
+    - `config/payments.php`.
 
 ## Repositórios Git
 

@@ -2,7 +2,9 @@ import { parseDecimal } from '@/lib/decimal';
 
 /** Valor monetário em centavos inteiros (bigint), sem ponto flutuante. Entrada vazia ou inválida vale zero. */
 export function toCents(value: string): bigint {
-    const match = /^(-?)(\d+)(?:\.(\d{1,2}))?$/.exec(parseDecimal(value) || '0');
+    const match = /^(-?)(\d+)(?:\.(\d{1,2}))?$/.exec(
+        parseDecimal(value) || '0',
+    );
 
     if (match === null) {
         return 0n;

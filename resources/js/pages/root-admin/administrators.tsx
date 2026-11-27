@@ -19,7 +19,13 @@ import { useTenant } from '@/hooks/use-tenant';
 import { home } from '@/routes/root-admin';
 import { destroy, index } from '@/routes/root-admin/administrators';
 
-type Administrator = { id: number; name: string; email: string; created_at: string | null; is_current: boolean };
+type Administrator = {
+    id: number;
+    name: string;
+    email: string;
+    created_at: string | null;
+    is_current: boolean;
+};
 
 function RevokeDialog({ administrator }: { administrator: Administrator }) {
     const [isOpen, setIsOpen] = useState(false);
@@ -44,23 +50,38 @@ function RevokeDialog({ administrator }: { administrator: Administrator }) {
                     className="space-y-4"
                     onSubmit={(event) => {
                         event.preventDefault();
-                        form.delete(destroy.url(administrator.id), { preserveScroll: true, onSuccess: () => setIsOpen(false) });
+                        form.delete(destroy.url(administrator.id), {
+                            preserveScroll: true,
+                            onSuccess: () => setIsOpen(false),
+                        });
                     }}
                 >
-                    <DialogTitle>Revogar acesso de {administrator.name}?</DialogTitle>
+                    <DialogTitle>
+                        Revogar acesso de {administrator.name}?
+                    </DialogTitle>
                     <DialogDescription>
                         {administrator.is_current
                             ? 'Você perderá o acesso ao painel administrativo imediatamente.'
                             : 'O usuário continua existindo e mantém os vínculos com empresas, mas perde o acesso ao painel.'}{' '}
                         O último administrador ativo não pode ser revogado.
                     </DialogDescription>
-                    <FormField id={`revoke-reason-${administrator.id}`} label="Motivo" error={form.errors.reason ?? (form.errors as Record<string, string>).administrator}>
+                    <FormField
+                        id={`revoke-reason-${administrator.id}`}
+                        label="Motivo"
+                        error={
+                            form.errors.reason ??
+                            (form.errors as Record<string, string>)
+                                .administrator
+                        }
+                    >
                         <NativeTextarea
                             id={`revoke-reason-${administrator.id}`}
                             required
                             maxLength={400}
                             value={form.data.reason}
-                            onChange={(event) => form.setData('reason', event.target.value)}
+                            onChange={(event) =>
+                                form.setData('reason', event.target.value)
+                            }
                         />
                     </FormField>
                     <DialogFooter className="gap-2">
@@ -69,7 +90,10 @@ function RevokeDialog({ administrator }: { administrator: Administrator }) {
                                 Voltar
                             </Button>
                         </DialogClose>
-                        <Button variant="destructive" disabled={form.processing}>
+                        <Button
+                            variant="destructive"
+                            disabled={form.processing}
+                        >
                             Revogar
                         </Button>
                     </DialogFooter>
@@ -79,7 +103,11 @@ function RevokeDialog({ administrator }: { administrator: Administrator }) {
     );
 }
 
-export default function PlatformAdministrators({ administrators }: { administrators: Administrator[] }) {
+export default function PlatformAdministrators({
+    administrators,
+}: {
+    administrators: Administrator[];
+}) {
     const { errors } = usePage().props;
     const { formatDateTime } = useTenant();
 
@@ -94,22 +122,35 @@ export default function PlatformAdministrators({ administrators }: { administrat
                 />
                 <p className="rounded-lg border p-4 text-sm">
                     Para cadastrar um administrador, execute no servidor:{' '}
-                    <code className="rounded bg-muted px-1.5 py-0.5">php artisan rootadmin:create</code>. O comando solicita nome,
-                    e-mail e senha, e não eleva usuários já existentes.
+                    <code className="rounded bg-muted px-1.5 py-0.5">
+                        php artisan rootadmin:create
+                    </code>
+                    . O comando solicita nome, e-mail e senha, e não eleva
+                    usuários já existentes.
                 </p>
                 <InputError message={errors.administrator} />
                 <ul className="divide-y rounded-lg border">
                     {administrators.map((administrator) => (
-                        <li key={administrator.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
+                        <li
+                            key={administrator.id}
+                            className="flex flex-wrap items-center justify-between gap-3 p-4"
+                        >
                             <span>
-                                <span className="font-medium">{administrator.name}</span>{' '}
-                                {administrator.is_current && <Badge variant="secondary">Você</Badge>}
+                                <span className="font-medium">
+                                    {administrator.name}
+                                </span>{' '}
+                                {administrator.is_current && (
+                                    <Badge variant="secondary">Você</Badge>
+                                )}
                                 <span className="block text-sm text-muted-foreground">
                                     {administrator.email}
-                                    {administrator.created_at && ` · desde ${formatDateTime(administrator.created_at)}`}
+                                    {administrator.created_at &&
+                                        ` · desde ${formatDateTime(administrator.created_at)}`}
                                 </span>
                             </span>
-                            {administrators.length > 1 && <RevokeDialog administrator={administrator} />}
+                            {administrators.length > 1 && (
+                                <RevokeDialog administrator={administrator} />
+                            )}
                         </li>
                     ))}
                 </ul>

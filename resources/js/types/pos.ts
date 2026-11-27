@@ -6,7 +6,12 @@ export type PosTerminal = {
     is_active: boolean;
     receipt_width: number;
     operators: { id: number; name: string }[];
-    open_session: { id: number; number: number; user_name: string; user_id: number | null } | null;
+    open_session: {
+        id: number;
+        number: number;
+        user_name: string;
+        user_id: number | null;
+    } | null;
 };
 
 export type PosSessionData = {
@@ -62,7 +67,12 @@ export type PosSessionSummary = {
     received_total: string;
     term_total: string;
     change_total: string;
-    by_method: { method: string; label: string; received: string; term: string }[];
+    by_method: {
+        method: string;
+        label: string;
+        received: string;
+        term: string;
+    }[];
     supplies: string;
     withdrawals: string;
     adjustments: string;

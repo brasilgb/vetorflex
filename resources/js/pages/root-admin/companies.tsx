@@ -19,7 +19,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { home } from '@/routes/root-admin';
 import { index, status, store, update } from '@/routes/root-admin/companies';
-import { destroy, store as activate } from '@/routes/root-admin/companies/modules';
+import {
+    destroy,
+    store as activate,
+} from '@/routes/root-admin/companies/modules';
 import { index as users } from '@/routes/root-admin/users';
 
 type Company = {
@@ -43,7 +46,11 @@ type PlatformModule = {
 
 function CompanyDialog({ company }: { company?: Company }) {
     const [isOpen, setIsOpen] = useState(false);
-    const initial = { name: company?.name ?? '', slug: company?.slug ?? '', timezone: company?.timezone ?? 'America/Sao_Paulo' };
+    const initial = {
+        name: company?.name ?? '',
+        slug: company?.slug ?? '',
+        timezone: company?.timezone ?? 'America/Sao_Paulo',
+    };
     const form = useForm(initial);
 
     return (
@@ -56,7 +63,10 @@ function CompanyDialog({ company }: { company?: Company }) {
             }}
         >
             <DialogTrigger asChild>
-                <Button variant={company ? 'outline' : 'default'} size={company ? 'sm' : 'default'}>
+                <Button
+                    variant={company ? 'outline' : 'default'}
+                    size={company ? 'sm' : 'default'}
+                >
                     {company ? 'Editar' : 'Nova empresa'}
                 </Button>
             </DialogTrigger>
@@ -65,7 +75,10 @@ function CompanyDialog({ company }: { company?: Company }) {
                     className="space-y-4"
                     onSubmit={(event) => {
                         event.preventDefault();
-                        const options = { preserveScroll: true, onSuccess: () => setIsOpen(false) };
+                        const options = {
+                            preserveScroll: true,
+                            onSuccess: () => setIsOpen(false),
+                        };
 
                         if (company) {
                             form.put(update.url(company.id), options);
@@ -74,18 +87,58 @@ function CompanyDialog({ company }: { company?: Company }) {
                         }
                     }}
                 >
-                    <DialogTitle>{company ? `Editar ${company.name}` : 'Nova empresa'}</DialogTitle>
+                    <DialogTitle>
+                        {company ? `Editar ${company.name}` : 'Nova empresa'}
+                    </DialogTitle>
                     <DialogDescription>
-                        {company ? 'Os dados da empresa e dos módulos são preservados.' : 'A empresa é criada sem nenhum módulo ativo.'}
+                        {company
+                            ? 'Os dados da empresa e dos módulos são preservados.'
+                            : 'A empresa é criada sem nenhum módulo ativo.'}
                     </DialogDescription>
-                    <FormField id="company-name" label="Nome" error={form.errors.name}>
-                        <Input id="company-name" required maxLength={255} value={form.data.name} onChange={(event) => form.setData('name', event.target.value)} />
+                    <FormField
+                        id="company-name"
+                        label="Nome"
+                        error={form.errors.name}
+                    >
+                        <Input
+                            id="company-name"
+                            required
+                            maxLength={255}
+                            value={form.data.name}
+                            onChange={(event) =>
+                                form.setData('name', event.target.value)
+                            }
+                        />
                     </FormField>
-                    <FormField id="company-slug" label="Identificador" hint="Letras, números, hífen e sublinhado." error={form.errors.slug}>
-                        <Input id="company-slug" required maxLength={80} value={form.data.slug} onChange={(event) => form.setData('slug', event.target.value)} />
+                    <FormField
+                        id="company-slug"
+                        label="Identificador"
+                        hint="Letras, números, hífen e sublinhado."
+                        error={form.errors.slug}
+                    >
+                        <Input
+                            id="company-slug"
+                            required
+                            maxLength={80}
+                            value={form.data.slug}
+                            onChange={(event) =>
+                                form.setData('slug', event.target.value)
+                            }
+                        />
                     </FormField>
-                    <FormField id="company-timezone" label="Fuso horário" error={form.errors.timezone}>
-                        <Input id="company-timezone" required value={form.data.timezone} onChange={(event) => form.setData('timezone', event.target.value)} />
+                    <FormField
+                        id="company-timezone"
+                        label="Fuso horário"
+                        error={form.errors.timezone}
+                    >
+                        <Input
+                            id="company-timezone"
+                            required
+                            value={form.data.timezone}
+                            onChange={(event) =>
+                                form.setData('timezone', event.target.value)
+                            }
+                        />
                     </FormField>
                     <DialogFooter className="gap-2">
                         <DialogClose asChild>
@@ -104,14 +157,20 @@ function CompanyDialog({ company }: { company?: Company }) {
 function StatusDialog({ company }: { company: Company }) {
     const [isOpen, setIsOpen] = useState(false);
     const isActive = company.status === 'active';
-    const form = useForm({ status: isActive ? 'suspended' : 'active', reason: '' });
+    const form = useForm({
+        status: isActive ? 'suspended' : 'active',
+        reason: '',
+    });
 
     return (
         <Dialog
             open={isOpen}
             onOpenChange={(open) => {
                 setIsOpen(open);
-                form.setData({ status: isActive ? 'suspended' : 'active', reason: '' });
+                form.setData({
+                    status: isActive ? 'suspended' : 'active',
+                    reason: '',
+                });
                 form.clearErrors();
             }}
         >
@@ -125,7 +184,10 @@ function StatusDialog({ company }: { company: Company }) {
                     className="space-y-4"
                     onSubmit={(event) => {
                         event.preventDefault();
-                        form.patch(status.url(company.id), { preserveScroll: true, onSuccess: () => setIsOpen(false) });
+                        form.patch(status.url(company.id), {
+                            preserveScroll: true,
+                            onSuccess: () => setIsOpen(false),
+                        });
                     }}
                 >
                     <DialogTitle>
@@ -136,13 +198,19 @@ function StatusDialog({ company }: { company: Company }) {
                             ? 'Os usuários da empresa perdem o acesso imediatamente. Nenhum dado é apagado.'
                             : 'Os usuários com vínculo ativo voltam a acessar a empresa e os módulos já autorizados.'}
                     </DialogDescription>
-                    <FormField id={`status-reason-${company.id}`} label="Motivo" error={form.errors.reason}>
+                    <FormField
+                        id={`status-reason-${company.id}`}
+                        label="Motivo"
+                        error={form.errors.reason}
+                    >
                         <NativeTextarea
                             id={`status-reason-${company.id}`}
                             required
                             maxLength={400}
                             value={form.data.reason}
-                            onChange={(event) => form.setData('reason', event.target.value)}
+                            onChange={(event) =>
+                                form.setData('reason', event.target.value)
+                            }
                         />
                     </FormField>
                     <DialogFooter className="gap-2">
@@ -151,7 +219,10 @@ function StatusDialog({ company }: { company: Company }) {
                                 Voltar
                             </Button>
                         </DialogClose>
-                        <Button variant={isActive ? 'destructive' : 'default'} disabled={form.processing}>
+                        <Button
+                            variant={isActive ? 'destructive' : 'default'}
+                            disabled={form.processing}
+                        >
                             {isActive ? 'Suspender' : 'Reativar'}
                         </Button>
                     </DialogFooter>
@@ -161,21 +232,35 @@ function StatusDialog({ company }: { company: Company }) {
     );
 }
 
-export default function Companies({ companies, modules }: { companies: Company[]; modules: PlatformModule[] }) {
+export default function Companies({
+    companies,
+    modules,
+}: {
+    companies: Company[];
+    modules: PlatformModule[];
+}) {
     const { errors } = usePage().props;
-    const nameOf = (identifier: string): string => modules.find((module) => module.identifier === identifier)?.name ?? identifier;
+    const nameOf = (identifier: string): string =>
+        modules.find((module) => module.identifier === identifier)?.name ??
+        identifier;
 
     return (
         <>
             <Head title="Empresas" />
             <section className="space-y-6 p-4 md:p-6">
                 <div className="flex flex-wrap items-start justify-between gap-3">
-                    <Heading variant="small" title="Empresas" description="Cadastro, situação e módulos autorizados por empresa. Desativar um módulo preserva os dados." />
+                    <Heading
+                        variant="small"
+                        title="Empresas"
+                        description="Cadastro, situação e módulos autorizados por empresa. Desativar um módulo preserva os dados."
+                    />
                     <CompanyDialog />
                 </div>
                 <InputError message={errors.module} />
                 {companies.length === 0 && (
-                    <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">Nenhuma empresa cadastrada.</p>
+                    <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+                        Nenhuma empresa cadastrada.
+                    </p>
                 )}
                 <ul className="divide-y rounded-lg border">
                     {companies.map((company) => (
@@ -183,12 +268,25 @@ export default function Companies({ companies, modules }: { companies: Company[]
                             <div className="flex flex-wrap items-start justify-between gap-2">
                                 <p className="font-medium">
                                     {company.name}{' '}
-                                    <Badge variant={company.status === 'active' ? 'secondary' : 'destructive'}>
-                                        {company.status === 'active' ? 'Ativa' : 'Suspensa'}
+                                    <Badge
+                                        variant={
+                                            company.status === 'active'
+                                                ? 'secondary'
+                                                : 'destructive'
+                                        }
+                                    >
+                                        {company.status === 'active'
+                                            ? 'Ativa'
+                                            : 'Suspensa'}
                                     </Badge>
                                     <span className="block text-sm font-normal text-muted-foreground">
                                         {company.slug} · {company.timezone} ·{' '}
-                                        <Link className="underline" href={users({ query: { company: company.id } })}>
+                                        <Link
+                                            className="underline"
+                                            href={users({
+                                                query: { company: company.id },
+                                            })}
+                                        >
                                             {company.users_count} usuário(s)
                                         </Link>
                                     </span>
@@ -200,17 +298,30 @@ export default function Companies({ companies, modules }: { companies: Company[]
                             </div>
                             <ul className="flex flex-wrap gap-2">
                                 {modules.map((module) => {
-                                    const parameters = { company: company.id, module: module.id };
+                                    const parameters = {
+                                        company: company.id,
+                                        module: module.id,
+                                    };
                                     const details = [
-                                        (module.dependencies ?? []).length > 0 ? `Requer ${(module.dependencies ?? []).map(nameOf).join(', ')}` : null,
-                                        (module.optional_integrations ?? []).length > 0 ? `Integra com ${(module.optional_integrations ?? []).map(nameOf).join(', ')}` : null,
+                                        (module.dependencies ?? []).length > 0
+                                            ? `Requer ${(module.dependencies ?? []).map(nameOf).join(', ')}`
+                                            : null,
+                                        (module.optional_integrations ?? [])
+                                            .length > 0
+                                            ? `Integra com ${(module.optional_integrations ?? []).map(nameOf).join(', ')}`
+                                            : null,
                                     ]
                                         .filter(Boolean)
                                         .join(' · ');
 
                                     return (
-                                        <li key={module.id} title={details || undefined}>
-                                            {company.active_modules.includes(module.id) ? (
+                                        <li
+                                            key={module.id}
+                                            title={details || undefined}
+                                        >
+                                            {company.active_modules.includes(
+                                                module.id,
+                                            ) ? (
                                                 <ConfirmButton
                                                     size="sm"
                                                     route={destroy(parameters)}
@@ -225,7 +336,16 @@ export default function Companies({ companies, modules }: { companies: Company[]
                                                     type="button"
                                                     size="sm"
                                                     variant="ghost"
-                                                    onClick={() => router.visit(activate(parameters), { preserveScroll: true })}
+                                                    onClick={() =>
+                                                        router.visit(
+                                                            activate(
+                                                                parameters,
+                                                            ),
+                                                            {
+                                                                preserveScroll: true,
+                                                            },
+                                                        )
+                                                    }
                                                 >
                                                     Ativar {module.name}
                                                 </Button>

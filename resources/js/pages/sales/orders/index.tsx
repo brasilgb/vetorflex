@@ -208,7 +208,10 @@ export default function SaleOrders({
                                         </Link>
                                         <span className="block text-xs text-muted-foreground">
                                             {order.origin.value === 'pos'
-                                                ? [order.origin.label, order.origin_reference]
+                                                ? [
+                                                      order.origin.label,
+                                                      order.origin_reference,
+                                                  ]
                                                       .filter(Boolean)
                                                       .join(' · ')
                                                 : order.is_quick

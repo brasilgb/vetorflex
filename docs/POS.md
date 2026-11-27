@@ -12,16 +12,16 @@ A integração nunca concede interfaces ou permissões de módulos não contrata
 
 `app/Modules/Pos`: `Enums`, `Models`, `Data`, `Services`, `Events`, `Support`. Controladores em `app/Http/Controllers/Pos`, requisições em `app/Http/Requests/Pos`, rotas em `routes/pos.php` (`/pos`), telas em `resources/js/pages/pos`, componentes em `resources/js/components/pos` e carrinho em `resources/js/lib/pos-cart.ts`.
 
-| Tabela | Conteúdo |
-|---|---|
-| `pos_terminals` | Pontos de atendimento: nome, identificação única por empresa, localização, situação, largura do comprovante (58 ou 80 mm) e configurações. |
-| `pos_terminal_operators` | Operadores autorizados. Sem operadores, qualquer usuário com `pos.open_session` pode abrir o terminal. |
-| `pos_sessions` | Sessões de caixa: operador, saldo inicial, abertura, fechamento cego, esperado, contado, divergência, justificativa e resumo congelado. `open_terminal_id` único impede duas sessões abertas no mesmo terminal. |
-| `pos_sales` | Atendimentos do caixa: suspenso (carrinho), concluído (vínculo com `sale_orders`) ou cancelado. Recebido, a prazo, troco, devolvido, autorização, segunda via e chave de idempotência. |
-| `pos_payments` | Formas de pagamento de cada venda: valor, entregue, troco, recebido ou a prazo, vencimento e vínculo com a parcela da venda. |
-| `pos_cash_movements` | Suprimento, sangria, ajuste e restituição em dinheiro. Imutáveis; correções após o fechamento ficam marcadas (`is_post_close`). |
-| `pos_refunds` | Restituições ao cliente vinculadas à devolução de Vendas (`sale_returns`). |
-| `pos_favorites` | Itens favoritos do catálogo compartilhado, em ordem. |
+| Tabela                   | Conteúdo                                                                                                                                                                                                        |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pos_terminals`          | Pontos de atendimento: nome, identificação única por empresa, localização, situação, largura do comprovante (58 ou 80 mm) e configurações.                                                                      |
+| `pos_terminal_operators` | Operadores autorizados. Sem operadores, qualquer usuário com `pos.open_session` pode abrir o terminal.                                                                                                          |
+| `pos_sessions`           | Sessões de caixa: operador, saldo inicial, abertura, fechamento cego, esperado, contado, divergência, justificativa e resumo congelado. `open_terminal_id` único impede duas sessões abertas no mesmo terminal. |
+| `pos_sales`              | Atendimentos do caixa: suspenso (carrinho), concluído (vínculo com `sale_orders`) ou cancelado. Recebido, a prazo, troco, devolvido, autorização, segunda via e chave de idempotência.                          |
+| `pos_payments`           | Formas de pagamento de cada venda: valor, entregue, troco, recebido ou a prazo, vencimento e vínculo com a parcela da venda.                                                                                    |
+| `pos_cash_movements`     | Suprimento, sangria, ajuste e restituição em dinheiro. Imutáveis; correções após o fechamento ficam marcadas (`is_post_close`).                                                                                 |
+| `pos_refunds`            | Restituições ao cliente vinculadas à devolução de Vendas (`sale_returns`).                                                                                                                                      |
+| `pos_favorites`          | Itens favoritos do catálogo compartilhado, em ordem.                                                                                                                                                            |
 
 A migration `add_origin_reference_to_sale_orders_table` adiciona a referência legível do canal (terminal e sessão) à venda comercial.
 

@@ -14,15 +14,11 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { formatMoney, parseDecimal, toDecimalInput } from "@/lib/decimal";
-import { fromCents, toCents as cents } from "@/lib/money";
+import { formatMoney, parseDecimal, toDecimalInput } from '@/lib/decimal';
+import { fromCents, toCents as cents } from '@/lib/money';
 import { uuid } from '@/lib/uuid';
 import { store } from '@/routes/finance/settlements';
-import type {
-    FinanceOption,
-    FinanceTitleSummary,
-    Option,
-} from '@/types';
+import type { FinanceOption, FinanceTitleSummary, Option } from '@/types';
 
 /** Recebimento ou pagamento, integral ou parcial. O valor movimentado é calculado no servidor. */
 export default function SettleDialog({
@@ -69,7 +65,9 @@ export default function SettleDialog({
             }}
         >
             <DialogTrigger asChild>
-                <Button size={size}>{isReceivable ? 'Receber' : 'Pagar'}</Button>
+                <Button size={size}>
+                    {isReceivable ? 'Receber' : 'Pagar'}
+                </Button>
             </DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto">
                 <form
@@ -91,7 +89,9 @@ export default function SettleDialog({
                     }}
                 >
                     <DialogTitle>
-                        {isReceivable ? 'Registrar recebimento' : 'Registrar pagamento'}{' '}
+                        {isReceivable
+                            ? 'Registrar recebimento'
+                            : 'Registrar pagamento'}{' '}
                         — #{title.number}
                     </DialogTitle>
                     <DialogDescription>
@@ -140,7 +140,10 @@ export default function SettleDialog({
                                 required
                                 value={form.data.settled_at}
                                 onChange={(event) =>
-                                    form.setData('settled_at', event.target.value)
+                                    form.setData(
+                                        'settled_at',
+                                        event.target.value,
+                                    )
                                 }
                             />
                         </FormField>
@@ -158,7 +161,10 @@ export default function SettleDialog({
                             >
                                 <option value="">Não informada</option>
                                 {paymentMethods.map((method) => (
-                                    <option key={method.value} value={method.value}>
+                                    <option
+                                        key={method.value}
+                                        value={method.value}
+                                    >
                                         {method.label}
                                     </option>
                                 ))}
@@ -174,7 +180,10 @@ export default function SettleDialog({
                                 required
                                 value={form.data.principal}
                                 onChange={(event) =>
-                                    form.setData('principal', event.target.value)
+                                    form.setData(
+                                        'principal',
+                                        event.target.value,
+                                    )
                                 }
                             />
                         </FormField>
@@ -196,14 +205,21 @@ export default function SettleDialog({
                                         id={`settle-${field}`}
                                         value={form.data[field]}
                                         onChange={(event) =>
-                                            form.setData(field, event.target.value)
+                                            form.setData(
+                                                field,
+                                                event.target.value,
+                                            )
                                         }
                                     />
                                 </FormField>
                             ),
                         )}
                     </div>
-                    <FormField id="settle-notes" label="Observações" error={errors.notes}>
+                    <FormField
+                        id="settle-notes"
+                        label="Observações"
+                        error={errors.notes}
+                    >
                         <NativeTextarea
                             id="settle-notes"
                             maxLength={1000}
@@ -223,7 +239,9 @@ export default function SettleDialog({
                         </p>
                     )}
                     <DialogFooter>
-                        <Button disabled={form.processing || accounts.length === 0}>
+                        <Button
+                            disabled={form.processing || accounts.length === 0}
+                        >
                             Confirmar
                         </Button>
                     </DialogFooter>

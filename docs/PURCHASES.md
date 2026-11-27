@@ -4,15 +4,15 @@ Pedidos de compra, recebimentos totais e parciais, entrada de mercadorias, forma
 
 ## Estrutura
 
-| Tabela | Conteúdo |
-|---|---|
-| `purchase_orders` | Número por empresa, fornecedor e seu snapshot, datas, responsável, valores, condição de pagamento, referência externa, chave de idempotência |
-| `purchase_order_items` | Snapshot do item (descrição, SKU, código do fornecedor, unidade), quantidade, custo, desconto, total, custo de aquisição rateado e quantidade recebida |
-| `purchase_payment_schedules` | Vencimentos previstos |
-| `purchase_status_history` | Transições com responsável, data e motivo |
-| `purchase_receipts` / `_items` | Recebimentos, quantidades, custos efetivos, divergências e movimentação gerada |
-| `purchase_returns` / `_items` | Devoluções, quantidades, valor histórico e valor de estoque |
-| `company_sequences` | Numeração sequencial por empresa (pedido, recebimento, devolução), bloqueada até o fim da transação |
+| Tabela                         | Conteúdo                                                                                                                                               |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `purchase_orders`              | Número por empresa, fornecedor e seu snapshot, datas, responsável, valores, condição de pagamento, referência externa, chave de idempotência           |
+| `purchase_order_items`         | Snapshot do item (descrição, SKU, código do fornecedor, unidade), quantidade, custo, desconto, total, custo de aquisição rateado e quantidade recebida |
+| `purchase_payment_schedules`   | Vencimentos previstos                                                                                                                                  |
+| `purchase_status_history`      | Transições com responsável, data e motivo                                                                                                              |
+| `purchase_receipts` / `_items` | Recebimentos, quantidades, custos efetivos, divergências e movimentação gerada                                                                         |
+| `purchase_returns` / `_items`  | Devoluções, quantidades, valor histórico e valor de estoque                                                                                            |
+| `company_sequences`            | Numeração sequencial por empresa (pedido, recebimento, devolução), bloqueada até o fim da transação                                                    |
 
 Todas as tabelas têm `company_id` e chaves estrangeiras compostas `(company_id, id)`, que impedem referências entre empresas no próprio banco. Nada é excluído fisicamente.
 
@@ -20,13 +20,13 @@ O nome conceitual `purchase_status_history` foi mantido; o model é `PurchaseSta
 
 ## Estados
 
-| De | Para |
-|---|---|
-| Rascunho | Confirmado, Cancelado |
-| Confirmado | Parcialmente recebido, Recebido, Cancelado (sem recebimentos) |
-| Parcialmente recebido | Recebido (recebimento final ou saldo encerrado), Confirmado (estorno) |
-| Recebido | Parcialmente recebido ou Confirmado, somente por estorno de recebimento |
-| Cancelado | — |
+| De                    | Para                                                                    |
+| --------------------- | ----------------------------------------------------------------------- |
+| Rascunho              | Confirmado, Cancelado                                                   |
+| Confirmado            | Parcialmente recebido, Recebido, Cancelado (sem recebimentos)           |
+| Parcialmente recebido | Recebido (recebimento final ou saldo encerrado), Confirmado (estorno)   |
+| Recebido              | Parcialmente recebido ou Confirmado, somente por estorno de recebimento |
+| Cancelado             | —                                                                       |
 
 `PurchaseOrderStatus::canTransitionTo` é verificado no backend com o pedido bloqueado. Rascunho, confirmação e cancelamento não movimentam estoque. Só rascunhos são editáveis. Mercadoria recebida exige devolução ou estorno, nunca cancelamento.
 
@@ -71,20 +71,20 @@ Período informado (padrão: mês corrente). Compras efetivadas (confirmadas, pa
 
 ## Permissões
 
-| Permissão | Uso |
-|---|---|
-| `purchases.view` | Visão geral, pedidos, recebimentos, devoluções, fornecedores e PDF |
-| `purchases.create` | Novo pedido |
-| `purchases.update` | Editar rascunhos |
-| `purchases.confirm` | Confirmar |
-| `purchases.cancel` | Cancelar e encerrar saldo |
-| `purchases.receive` | Registrar recebimentos |
-| `purchases.return` | Devoluções e estorno de recebimentos |
-| `purchases.view_cost` | Valores em telas, PDF, exportações e indicadores |
-| `purchases.manage_cost` | Informar custos, despesas e pagamento; exige `view_cost` |
-| `purchases.export` | Exportar pedidos |
-| `purchases.manage_suppliers` | Cadastrar, editar, inativar fornecedores e vínculos com produtos |
-| `purchases.import_suppliers` / `export_suppliers` | Importação e exportação de fornecedores |
+| Permissão                                         | Uso                                                                |
+| ------------------------------------------------- | ------------------------------------------------------------------ |
+| `purchases.view`                                  | Visão geral, pedidos, recebimentos, devoluções, fornecedores e PDF |
+| `purchases.create`                                | Novo pedido                                                        |
+| `purchases.update`                                | Editar rascunhos                                                   |
+| `purchases.confirm`                               | Confirmar                                                          |
+| `purchases.cancel`                                | Cancelar e encerrar saldo                                          |
+| `purchases.receive`                               | Registrar recebimentos                                             |
+| `purchases.return`                                | Devoluções e estorno de recebimentos                               |
+| `purchases.view_cost`                             | Valores em telas, PDF, exportações e indicadores                   |
+| `purchases.manage_cost`                           | Informar custos, despesas e pagamento; exige `view_cost`           |
+| `purchases.export`                                | Exportar pedidos                                                   |
+| `purchases.manage_suppliers`                      | Cadastrar, editar, inativar fornecedores e vínculos com produtos   |
+| `purchases.import_suppliers` / `export_suppliers` | Importação e exportação de fornecedores                            |
 
 Toda rota exige empresa ativa, vínculo ativo, módulo habilitado e a permissão individual (`module.permission`); registros de outra empresa respondem 404 (`tenant.records`). Sem `manage_cost`, custos enviados são descartados e os gravados preservados. `purchases.view_cost` não concede `products.view_cost`: o custo médio do estoque continua restrito a Produtos, e a busca de itens de Compras não expõe saldo nem custo médio.
 
@@ -94,11 +94,11 @@ Toda rota exige empresa ativa, vínculo ativo, módulo habilitado e a permissão
 
 ## Pontos de extensão omnichannel (não implementados)
 
-| Necessidade | Onde estender |
-|---|---|
-| Pedidos de fornecedores importados ou por API | Novo adaptador que chame `PurchaseOrderService::create` com `external_reference` e `idempotency_key` derivada do identificador externo |
+| Necessidade                                         | Onde estender                                                                                                                                                 |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pedidos de fornecedores importados ou por API       | Novo adaptador que chame `PurchaseOrderService::create` com `external_reference` e `idempotency_key` derivada do identificador externo                        |
 | Recebimento por documento externo (XML fiscal, EDI) | Adaptador que leia o documento, localize o pedido pela referência e chame `PurchaseReceiptService::receive`; `document_reference` guarda a chave do documento |
-| Identificadores externos | `external_reference` no pedido e `supplier_code` em `supplier_products`; uma tabela de mapeamento por integração quando houver mais de um |
-| Sincronização de custos | Ler `inventory_cost_changes` (imutável e ordenada) a partir do último id processado |
-| Disponibilidade por eventos | Evento após o commit de `InventoryService::record`, já previsto em `INVENTORY-CORE.md` |
-| Processamento idempotente | Toda escrita aceita chave de idempotência com hash de conteúdo; integrações devem gerar a chave a partir do id de origem |
+| Identificadores externos                            | `external_reference` no pedido e `supplier_code` em `supplier_products`; uma tabela de mapeamento por integração quando houver mais de um                     |
+| Sincronização de custos                             | Ler `inventory_cost_changes` (imutável e ordenada) a partir do último id processado                                                                           |
+| Disponibilidade por eventos                         | Evento após o commit de `InventoryService::record`, já previsto em `INVENTORY-CORE.md`                                                                        |
+| Processamento idempotente                           | Toda escrita aceita chave de idempotência com hash de conteúdo; integrações devem gerar a chave a partir do id de origem                                      |

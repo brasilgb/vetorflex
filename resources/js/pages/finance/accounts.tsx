@@ -93,7 +93,9 @@ function AccountDialog({
                     }}
                 >
                     <DialogTitle>
-                        {account ? `Editar ${account.name}` : 'Nova conta financeira'}
+                        {account
+                            ? `Editar ${account.name}`
+                            : 'Nova conta financeira'}
                     </DialogTitle>
                     <DialogDescription>
                         O saldo atual é calculado pelas movimentações. Para
@@ -357,8 +359,8 @@ export default function FinanceAccounts({
                 </div>
                 {accounts.length === 0 ? (
                     <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-                        Nenhuma conta cadastrada. Cadastre ao menos o caixa
-                        para registrar recebimentos e pagamentos.
+                        Nenhuma conta cadastrada. Cadastre ao menos o caixa para
+                        registrar recebimentos e pagamentos.
                     </p>
                 ) : (
                     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -373,7 +375,10 @@ export default function FinanceAccounts({
                                             {account.name}
                                         </h3>
                                         <p className="text-xs text-muted-foreground">
-                                            {[account.type_label, account.institution]
+                                            {[
+                                                account.type_label,
+                                                account.institution,
+                                            ]
                                                 .filter(Boolean)
                                                 .join(' · ')}
                                         </p>

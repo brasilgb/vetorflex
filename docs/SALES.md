@@ -6,26 +6,26 @@ Orçamentos, pedidos de venda (diretos, convertidos de orçamento e venda rápid
 
 ## Dependências técnicas × comerciais
 
-| Recurso | Fonte | Exige o módulo contratado? |
-|---|---|---|
-| Pessoas e papel `customer` | `Parties` (`PartyService`) | Não. Clientes só adiciona as telas de gestão |
-| Itens comercializáveis | Catálogo compartilhado (`ProductCatalog`, `ProductService`) | Não. Produtos só adiciona as telas de gestão |
-| Estoque, reservas e custo médio | `Inventory` | **Sim: o estoque só é usado com Produtos habilitado** (`SalesStock`) |
-| Numeração, auditoria, PDF, CSV, condições de pagamento | `Core` | — |
+| Recurso                                                | Fonte                                                       | Exige o módulo contratado?                                           |
+| ------------------------------------------------------ | ----------------------------------------------------------- | -------------------------------------------------------------------- |
+| Pessoas e papel `customer`                             | `Parties` (`PartyService`)                                  | Não. Clientes só adiciona as telas de gestão                         |
+| Itens comercializáveis                                 | Catálogo compartilhado (`ProductCatalog`, `ProductService`) | Não. Produtos só adiciona as telas de gestão                         |
+| Estoque, reservas e custo médio                        | `Inventory`                                                 | **Sim: o estoque só é usado com Produtos habilitado** (`SalesStock`) |
+| Numeração, auditoria, PDF, CSV, condições de pagamento | `Core`                                                      | —                                                                    |
 
 Sem Produtos habilitado, Vendas não cria reservas nem movimentações, nem mesmo para itens que controlam estoque, e os itens cadastrados em Vendas nascem sem controle de estoque. As telas de Produtos e Clientes continuam respondendo 403 a quem não tem esses módulos.
 
 ## Estrutura
 
-| Tabela | Conteúdo |
-|---|---|
-| `sale_quotes` / `sale_quote_items` | Orçamento: número por empresa, cliente e snapshot, responsável, emissão, validade, valores, condições comerciais |
+| Tabela                             | Conteúdo                                                                                                                                                                                                                |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sale_quotes` / `sale_quote_items` | Orçamento: número por empresa, cliente e snapshot, responsável, emissão, validade, valores, condições comerciais                                                                                                        |
 | `sale_orders` / `sale_order_items` | Pedido: origem, orçamento de origem (único), cliente e snapshot, responsável, datas, entrega, valores, pagamento, observações comerciais e internas, valor líquido rateado por item, quantidades atendidas e devolvidas |
-| `sale_payment_schedules` | Vencimentos previstos de orçamentos e pedidos |
-| `sale_status_history` | Transições com usuário, data, situação anterior e nova, motivo |
-| `sale_fulfillments` / `_items` | Atendimentos: forma, data, receita, custo histórico e movimentação gerada |
-| `sale_returns` / `_items` | Devoluções: motivo, reposição ao estoque, valor e custo históricos |
-| `inventory_reservations` | Reservas por documento (domínio Inventory, reutilizável) |
+| `sale_payment_schedules`           | Vencimentos previstos de orçamentos e pedidos                                                                                                                                                                           |
+| `sale_status_history`              | Transições com usuário, data, situação anterior e nova, motivo                                                                                                                                                          |
+| `sale_fulfillments` / `_items`     | Atendimentos: forma, data, receita, custo histórico e movimentação gerada                                                                                                                                               |
+| `sale_returns` / `_items`          | Devoluções: motivo, reposição ao estoque, valor e custo históricos                                                                                                                                                      |
+| `inventory_reservations`           | Reservas por documento (domínio Inventory, reutilizável)                                                                                                                                                                |
 
 Chaves estrangeiras compostas `(company_id, id)` em todas as tabelas. Item avulso não tem unidade comercializável (`product_variant_id` nulo). Venda sem cliente tem `customer_party_id` nulo, quando a empresa permite (`companies.settings.sales.allow_anonymous_customer`, padrão `config/sales.php`).
 
@@ -33,13 +33,13 @@ Chaves estrangeiras compostas `(company_id, id)` em todas as tabelas. Item avuls
 
 Orçamento: Rascunho → Emitido → Aprovado → Convertido; Emitido → Recusado ou Expirado; Rascunho, Emitido e Aprovado → Cancelado. Expiração diária (`sales:expire-quotes`, 00:10) e na tentativa de aprovar ou recusar fora da validade.
 
-| Venda: de | Para |
-|---|---|
-| Rascunho | Confirmado, Cancelado |
-| Confirmado | Parcialmente atendido, Atendido, Cancelado (sem atendimentos) |
+| Venda: de             | Para                                                                  |
+| --------------------- | --------------------------------------------------------------------- |
+| Rascunho              | Confirmado, Cancelado                                                 |
+| Confirmado            | Parcialmente atendido, Atendido, Cancelado (sem atendimentos)         |
 | Parcialmente atendido | Atendido (atendimento final ou saldo encerrado), Confirmado (estorno) |
-| Atendido | Concluído; Parcialmente atendido ou Confirmado, somente por estorno |
-| Concluído, Cancelado | — (devoluções continuam possíveis em Concluído) |
+| Atendido              | Concluído; Parcialmente atendido ou Confirmado, somente por estorno   |
+| Concluído, Cancelado  | — (devoluções continuam possíveis em Concluído)                       |
 
 A situação é comercial e de atendimento. A situação financeira pertence ao Financeiro: concluir não marca a venda como paga.
 

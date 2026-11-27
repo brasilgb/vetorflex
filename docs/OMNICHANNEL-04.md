@@ -27,12 +27,12 @@ Resolve a pendência "não há tela para conceder permissões individuais" da OM
 
 ## Pendências registradas
 
-| Pendência | Impacto |
-|---|---|
-| Interações no navegador não foram testadas (sem Chrome no ambiente) | Diálogos de recebimento e devolução, geração de parcelas, abas e responsividade exigem homologação manual, inclusive em celular. As telas foram verificadas por resposta do servidor |
-| Clientes não usa `PartyService` e recusa documento já cadastrado | O vínculo cliente/fornecedor só é feito a partir de Fornecedores; Clientes mantém as pendências da OMNICHANNEL-02 |
-| Dados cadastrais da empresa compradora (documento, endereço) não têm tela | O PDF exibe apenas o nome, salvo se `companies.settings` for preenchido |
-| Importação de fornecedores síncrona, até 500 linhas | Volumes maiores exigem fila |
-| Teste de concorrência feito em MariaDB 11.8 local, não em MySQL 8.4 | Repetir no MySQL 8.4 do `compose.yaml` antes da produção |
-| Imutabilidade de recebimentos e do histórico de custo garantida pela aplicação | SQL direto ainda conseguiria alterá-los |
-| Obrigações financeiras apenas como contrato | Contas a pagar na OMNICHANNEL-06 |
+| Pendência                                                                      | Impacto                                                                                                                                                                              |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Interações no navegador não foram testadas (sem Chrome no ambiente)            | Diálogos de recebimento e devolução, geração de parcelas, abas e responsividade exigem homologação manual, inclusive em celular. As telas foram verificadas por resposta do servidor |
+| Clientes não usa `PartyService` e recusa documento já cadastrado               | O vínculo cliente/fornecedor só é feito a partir de Fornecedores; Clientes mantém as pendências da OMNICHANNEL-02                                                                    |
+| Dados cadastrais da empresa compradora (documento, endereço) não têm tela      | O PDF exibe apenas o nome, salvo se `companies.settings` for preenchido                                                                                                              |
+| Importação de fornecedores síncrona, até 500 linhas                            | Volumes maiores exigem fila                                                                                                                                                          |
+| Teste de concorrência feito em MariaDB 11.8 local, não em MySQL 8.4            | Repetir no MySQL 8.4 do `compose.yaml` antes da produção                                                                                                                             |
+| Imutabilidade de recebimentos e do histórico de custo garantida pela aplicação | SQL direto ainda conseguiria alterá-los                                                                                                                                              |
+| Obrigações financeiras apenas como contrato                                    | Contas a pagar na OMNICHANNEL-06                                                                                                                                                     |
