@@ -31,11 +31,13 @@ class Company extends Model
         return ['settings' => 'array'];
     }
 
+    /** @return BelongsToMany<User, $this, CompanyMembership, 'pivot'> */
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class)->using(CompanyMembership::class)->withPivot(['role', 'is_active', 'permissions'])->withTimestamps();
     }
 
+    /** @return HasMany<CompanyModule, $this> */
     public function moduleAssignments(): HasMany
     {
         return $this->hasMany(CompanyModule::class);

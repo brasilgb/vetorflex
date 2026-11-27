@@ -22,6 +22,7 @@ enum SalePermission: string
     case ViewMargin = 'sales.view_margin';
     case Export = 'sales.export';
     case ViewIndicators = 'sales.view_indicators';
+    case ManageSettings = 'sales.manage_settings';
 
     public function label(): string
     {
@@ -44,6 +45,7 @@ enum SalePermission: string
             self::ViewMargin => 'Consultar margens (exige consultar custos)',
             self::Export => 'Exportar vendas',
             self::ViewIndicators => 'Consultar indicadores de vendas',
+            self::ManageSettings => 'Gerenciar configurações de Vendas',
         };
     }
 

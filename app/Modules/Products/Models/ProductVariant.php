@@ -30,6 +30,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property string|null $sale_price
  * @property string|null $promotional_price
  * @property string $minimum_stock
+ * @property string|null $maximum_stock Estoque máximo (opcional), usado nos alertas do módulo Estoque.
  * @property string|null $weight
  * @property string|null $height
  * @property string|null $width
@@ -44,7 +45,7 @@ class ProductVariant extends Model
     /** @use HasFactory<ProductVariantFactory> */
     use HasFactory;
 
-    protected $fillable = ['company_id', 'product_id', 'label', 'combination_key', 'sku', 'barcode', 'barcode_type', 'cost_price', 'sale_price', 'promotional_price', 'minimum_stock', 'weight', 'height', 'width', 'length', 'is_default', 'is_active'];
+    protected $fillable = ['company_id', 'product_id', 'label', 'combination_key', 'sku', 'barcode', 'barcode_type', 'cost_price', 'sale_price', 'promotional_price', 'minimum_stock', 'maximum_stock', 'weight', 'height', 'width', 'length', 'is_default', 'is_active'];
 
     protected $attributes = ['minimum_stock' => '0', 'is_default' => false, 'is_active' => true];
 
@@ -56,6 +57,7 @@ class ProductVariant extends Model
             'sale_price' => 'decimal:2',
             'promotional_price' => 'decimal:2',
             'minimum_stock' => 'decimal:4',
+            'maximum_stock' => 'decimal:4',
             'weight' => 'decimal:4',
             'height' => 'decimal:4',
             'width' => 'decimal:4',

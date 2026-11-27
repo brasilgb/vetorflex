@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Modules\Sales\Enums\SalePermission;
 use App\Modules\Sales\Models\SaleFulfillment;
 use App\Modules\Sales\Models\SaleOrder;
 use App\Modules\Sales\Models\SaleQuote;
@@ -39,4 +40,18 @@ test('every sales page renders for the demo company', function () {
     foreach (["/sales/quotes/{$quote->id}/document", '/sales/returns/'.SaleReturn::query()->where('company_id', $company->id)->sole()->id.'/document', '/sales/fulfillments/'.SaleFulfillment::query()->where('company_id', $company->id)->first()->id.'/document'] as $path) {
         expect($this->get($path)->assertOk()->getContent())->toStartWith('%PDF-1.4');
     }
+});
+
+test('the sales settings screen controls anonymous sales and needs its own permission', function () {
+    $this->withoutVite();
+    $company = Company::factory()->create();
+    actingAsSalesMember($company);
+
+    $this->get('/sales/settings')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page->component('sales/settings')->where('settings.allow_anonymous_customer', true));
+    $this->put('/sales/settings', ['allow_anonymous_customer' => false])->assertSessionHasNoErrors();
+    expect($company->refresh()->settings['sales']['allow_anonymous_customer'])->toBeFalse();
+    $this->post('/sales/orders', saleOrderData(null, [['description' => 'Serviço', 'unit_price' => '10.00', 'quantity' => '1']]))->assertSessionHasErrors();
+
+    actingAsSalesMember($company, [SalePermission::View]);
+    $this->get('/sales/settings')->assertForbidden();
 });

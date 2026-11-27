@@ -11,10 +11,12 @@ use App\Modules\Customers\Models\CustomerImport;
 use App\Modules\Customers\Models\CustomerProfile;
 use App\Modules\Parties\Models\Party;
 use App\Modules\Parties\Models\PartyRole;
+use App\Modules\Parties\Services\PartyService;
 use App\Modules\Parties\Support\BrazilianDocument;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -23,6 +25,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CustomerController extends Controller
 {
+    public function __construct(private PartyService $parties) {}
+
     public function index(Request $request): Response
     {
         $company = $request->attributes->get('company');
@@ -85,6 +89,11 @@ class CustomerController extends Controller
 
         return response()->streamDownload(function () use ($company): void {
             $output = fopen('php://output', 'w');
+
+            if ($output === false) {
+                return;
+            }
+
             fputcsv($output, ['tipo', 'nome', 'nome_fantasia', 'documento', 'email', 'telefone', 'celular']);
             Party::query()->customersOf($company)->orderBy('name')->each(function (Party $customer) use ($output): void {
                 fputcsv($output, CsvCell::escapeRow([$customer->type, $customer->name, $customer->trade_name, $customer->document, $customer->email, $customer->phone, $customer->mobile]));
@@ -97,9 +106,9 @@ class CustomerController extends Controller
     {
         $company = $request->attributes->get('company');
         $file = $request->file('file');
-        $rows = array_map('str_getcsv', file($file->getRealPath(), FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
+        $rows = array_map('str_getcsv', file($file->getRealPath(), FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: []);
         $headers = array_map(
-            fn (string $header): string => Str::snake(Str::ascii(trim(str_replace("\xEF\xBB\xBF", '', $header)))),
+            fn (?string $header): string => Str::snake(Str::ascii(trim(str_replace("\xEF\xBB\xBF", '', (string) $header)))),
             array_shift($rows) ?? [],
         );
         $created = 0;
@@ -126,8 +135,7 @@ class CustomerController extends Controller
                     continue;
                 }
 
-                $party = Party::create(['company_id' => $company->id, 'type' => $type, 'name' => $name, 'trade_name' => $data['nome_fantasia'] ?? $data['trade_name'] ?? null, 'document' => $document, 'email' => $data['email'] ?? null, 'phone' => $data['telefone'] ?? $data['phone'] ?? null, 'mobile' => $data['celular'] ?? $data['mobile'] ?? null]);
-                $party->roles()->create(['company_id' => $company->id, 'role' => PartyRole::CUSTOMER]);
+                $party = $this->parties->save($company, new Party, PartyRole::CUSTOMER, ['type' => $type, 'name' => $name, 'trade_name' => $data['nome_fantasia'] ?? $data['trade_name'] ?? null, 'document' => $document, 'email' => $data['email'] ?? null, 'phone' => $data['telefone'] ?? $data['phone'] ?? null, 'mobile' => $data['celular'] ?? $data['mobile'] ?? null]);
                 CustomerProfile::create(['company_id' => $company->id, 'party_id' => $party->id, 'registered_by' => $request->user()->id]);
                 $created++;
             }
@@ -151,17 +159,16 @@ class CustomerController extends Controller
         $partyAttributes = collect($validated)->only(['type', 'name', 'trade_name', 'document', 'email', 'phone', 'mobile', 'whatsapp', 'state_registration', 'municipal_registration', 'birth_date', 'notes'])->all();
         $profileAttributes = collect($validated)->only(['credit_limit', 'payment_terms', 'classification', 'commercial_notes'])->all();
 
+        // A pessoa é gravada pelo domínio compartilhado (PartyService); Clientes grava apenas o próprio perfil.
         return DB::transaction(function () use ($company, $request, $customer, $validated, $partyAttributes, $profileAttributes): Party {
-            $partyAttributes['company_id'] = $company->id;
-            $partyAttributes['document'] = BrazilianDocument::normalize($partyAttributes['document'] ?? null);
             $isNew = ! $customer->exists;
-            $customer->fill($partyAttributes)->save();
-            $customer->roles()->firstOrCreate(['role' => PartyRole::CUSTOMER], ['company_id' => $company->id]);
+            $customer = $this->parties->save($company, $customer, PartyRole::CUSTOMER, [
+                ...$partyAttributes,
+                'document' => $partyAttributes['document'] ?? null,
+                'addresses' => array_map(fn (array $address): array => Arr::except($address, 'id'), $validated['addresses'] ?? []),
+                'contacts' => array_map(fn (array $contact): array => Arr::except($contact, 'id'), $validated['contacts'] ?? []),
+            ]);
             $customer->customerProfile()->updateOrCreate([], [...$profileAttributes, 'company_id' => $company->id, 'registered_by' => $isNew ? $request->user()->id : $customer->customerProfile?->registered_by]);
-            $customer->addresses()->delete();
-            $customer->contacts()->delete();
-            $customer->addresses()->createMany(array_map(fn (array $address): array => [...$address, 'company_id' => $company->id], $validated['addresses'] ?? []));
-            $customer->contacts()->createMany(array_map(fn (array $contact): array => [...$contact, 'company_id' => $company->id], $validated['contacts'] ?? []));
 
             return $customer;
         });

@@ -20,9 +20,11 @@ use App\Modules\Purchases\Services\PurchaseOrderSearch;
 use App\Modules\Purchases\Services\PurchaseOrderService;
 use App\Modules\Purchases\Support\PurchasePresenter;
 use App\Modules\Purchases\Support\SupplierCsv;
+use App\Modules\Sales\Services\SaleItems;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -210,6 +212,40 @@ class PurchaseOrderController extends PurchaseController
             'supplier_code' => $links->get($variant->id)?->supplier_code,
             'last_cost' => $canViewCost ? $links->get($variant->id)?->last_cost : null,
         ])->values());
+    }
+
+    /**
+     * Cadastro simplificado de item no pedido de compra, sem exigir o módulo Produtos: a mesma entidade compartilhada
+     * do catálogo (`SaleItems::createSimplified`). Controla estoque somente com Estoque ou Produtos habilitados.
+     */
+    public function storeItem(Request $request, SaleItems $items): JsonResponse
+    {
+        $company = $this->company($request);
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'type' => ['required', 'in:simple,service'],
+            'sku' => ['nullable', 'string', 'max:60', Rule::unique('product_variants', 'sku')->where('company_id', $company->id)],
+            'unit_code' => ['nullable', 'string', 'max:10'],
+        ], ['name.required' => 'Informe o nome do item.', 'sku.unique' => 'Este SKU já está em uso.']);
+        $variant = $items->createSimplified($company, $request->user(), [
+            'name' => trim($validated['name']),
+            'type' => $validated['type'],
+            'sale_price' => null,
+            'sku' => isset($validated['sku']) ? mb_strtoupper(trim($validated['sku'])) : null,
+            'unit_code' => $validated['unit_code'] ?? null,
+        ]);
+
+        return response()->json([
+            'id' => $variant->id,
+            'name' => $variant->displayName(),
+            'sku' => $variant->sku,
+            'barcode' => $variant->barcode,
+            'unit' => $variant->product->unit->only(['code', 'allows_fraction']),
+            'controls_stock' => $variant->product->controlsStock(),
+            'is_service' => $variant->product->type->value === 'service',
+            'supplier_code' => null,
+            'last_cost' => null,
+        ], 201);
     }
 
     /** @return array<string, mixed> */

@@ -4,6 +4,7 @@ use App\Models\User;
 use App\Modules\Finance\Enums\FinancePermission;
 use App\Modules\Finance\Models\FinanceAccount;
 use App\Modules\Inventory\Data\StockOperation;
+use App\Modules\Inventory\Enums\InventoryPermission;
 use App\Modules\Inventory\Services\InventoryService;
 use App\Modules\ModuleManager\Models\CompanyModule;
 use App\Modules\ModuleManager\Models\PlatformModule;
@@ -352,4 +353,52 @@ function openPosSession(Company $company, string $openingAmount = '100.00', stri
 function posCart(array $items, array $payments, array $overrides = []): array
 {
     return ['items' => $items, 'payments' => $payments, 'idempotency_key' => (string) Str::uuid(), ...$overrides];
+}
+
+/**
+ * Autentica um membro com o módulo Estoque habilitado e, quando pedidos, outros módulos (identificadores).
+ * Sem permissões informadas, é proprietário.
+ *
+ * @param  list<InventoryPermission|PurchasePermission|SalePermission|PosPermission|ProductPermission>|null  $permissions
+ * @param  list<string>  $alsoEnable
+ */
+function actingAsInventoryMember(Company $company, ?array $permissions = null, array $alsoEnable = [], ?User $user = null): User
+{
+    $user ??= User::factory()->create();
+    $user->companies()->syncWithoutDetaching([$company->id => [
+        'role' => $permissions === null ? 'owner' : 'operator',
+        'is_active' => true,
+        'permissions' => array_column($permissions ?? [], 'value'),
+    ]]);
+    $catalogs = [
+        'inventory' => ['Estoque', InventoryPermission::catalog()],
+        'products' => ['Produtos', ProductPermission::catalog()],
+        'purchases' => ['Compras', PurchasePermission::catalog()],
+        'sales' => ['Vendas', SalePermission::catalog()],
+        'pos' => ['PDV', PosPermission::catalog()],
+        'finance' => ['Financeiro', FinancePermission::catalog()],
+    ];
+
+    foreach (['inventory', ...$alsoEnable] as $identifier) {
+        [$name, $catalog] = $catalogs[$identifier];
+        $module = PlatformModule::query()->firstOrCreate(['identifier' => $identifier], ['name' => $name, 'description' => $name, 'dependencies' => [], 'permissions' => $catalog]);
+        CompanyModule::query()->firstOrCreate(['company_id' => $company->id, 'platform_module_id' => $module->id], ['activated_by' => $user->id, 'activated_at' => now()]);
+    }
+
+    test()->actingAs($user)->withSession(['active_company_id' => $company->id]);
+
+    return $user;
+}
+
+/** Mercadoria com controle de estoque e, se informado, saldo inicial no depósito (o principal quando omitido). */
+function stockItem(Company $company, ?string $initial = null, ?int $warehouseId = null, bool $isFractional = false, string $minimum = '0'): ProductVariant
+{
+    $variant = purchasableVariant($company, '5.00', $isFractional);
+    $variant->update(['minimum_stock' => $minimum]);
+
+    if ($initial !== null) {
+        app(InventoryService::class)->recordInitial(new StockOperation($company->id, $variant->id, $initial, warehouseId: $warehouseId));
+    }
+
+    return $variant->fresh();
 }

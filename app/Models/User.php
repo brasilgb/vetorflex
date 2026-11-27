@@ -47,6 +47,7 @@ class User extends Authenticatable
         ];
     }
 
+    /** @return BelongsToMany<Company, $this, CompanyMembership, 'pivot'> */
     public function companies(): BelongsToMany
     {
         return $this->belongsToMany(Company::class)->using(CompanyMembership::class)->withPivot(['role', 'is_active', 'permissions'])->withTimestamps();

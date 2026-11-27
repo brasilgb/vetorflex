@@ -39,7 +39,7 @@ class SaleItems
     /**
      * Sem o estoque habilitado, o item nasce sem controle de estoque, para não criar saldos ocultos.
      *
-     * @param  array{name: string, type: string, sale_price: string, sku?: string|null, unit_code?: string|null}  $data
+     * @param  array{name: string, type: string, sale_price: string|null, sku?: string|null, unit_code?: string|null}  $data  Sem preço de venda no cadastro feito por Compras.
      */
     public function createSimplified(Company $company, User $user, array $data): ProductVariant
     {

@@ -7,3 +7,4 @@ export type * from './sales';
 export type * from './finance';
 export type * from './platform';
 export type * from './pos';
+export type * from './inventory';

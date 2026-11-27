@@ -28,7 +28,7 @@ class StoreInventoryMovementRequest extends FormRequest
 
         return [
             'product_variant_id' => ['required', 'integer', Rule::exists('product_variants', 'id')->where('company_id', $company->id)],
-            'type' => ['required', Rule::enum(MovementType::class)->except(MovementType::Reversal)],
+            'type' => ['required', Rule::enum(MovementType::class)->except([MovementType::Reversal, MovementType::TransferOut, MovementType::TransferIn])],
             'quantity' => ['required', 'decimal:0,4', 'min:0', 'max:99999999999'],
             'reason' => ['nullable', 'required_if:type,adjustment', 'string', 'max:500'],
             'idempotency_key' => ['required', 'uuid'],

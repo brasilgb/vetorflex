@@ -3,22 +3,20 @@
 namespace App\Modules\Sales\Services;
 
 use App\Modules\Inventory\Services\InventoryReservationService;
+use App\Modules\Inventory\Services\StockModule;
 use App\Modules\Tenancy\Models\Company;
-use App\Modules\Tenancy\Services\TenantContext;
 
 /**
- * Integração opcional com o estoque. O núcleo de estoque pertence ao módulo Produtos; sem ele habilitado, Vendas não
- * cria reservas nem movimentações, nem mesmo ocultas.
+ * Integração opcional com o estoque. O controle de estoque é ativado pelo módulo Estoque ou por Produtos
+ * (`StockModule`); sem nenhum deles habilitado, Vendas e PDV não criam reservas nem movimentações, nem mesmo ocultas.
  */
 class SalesStock
 {
-    public const MODULE = 'products';
-
-    public function __construct(private TenantContext $tenants, private InventoryReservationService $reservations) {}
+    public function __construct(private StockModule $stock, private InventoryReservationService $reservations) {}
 
     public function isEnabled(Company $company): bool
     {
-        return $this->tenants->enabledModulesFor($company)->contains('identifier', self::MODULE);
+        return $this->stock->isEnabled($company);
     }
 
     /**

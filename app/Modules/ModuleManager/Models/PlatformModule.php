@@ -34,6 +34,7 @@ class PlatformModule extends Model
         ];
     }
 
+    /** @return HasMany<CompanyModule, $this> */
     public function companyModules(): HasMany
     {
         return $this->hasMany(CompanyModule::class);

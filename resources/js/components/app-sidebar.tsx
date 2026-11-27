@@ -5,6 +5,7 @@ import {
     Package,
     Store,
     Receipt,
+    Warehouse,
     ShieldCheck,
     ShoppingCart,
     UsersRound,
@@ -36,6 +37,16 @@ import { index as recurrences } from '@/routes/finance/recurrences';
 import { index as financeReports } from '@/routes/finance/reports';
 import { index as financeTitles } from '@/routes/finance/titles';
 import { index as financeTransfers } from '@/routes/finance/transfers';
+import {
+    dashboard as inventoryDashboard,
+    settings as inventorySettings,
+} from '@/routes/inventory';
+import { index as inventoryCounts } from '@/routes/inventory/counts';
+import { index as inventoryItems } from '@/routes/inventory/items';
+import { index as inventoryMovements } from '@/routes/inventory/movements';
+import { index as inventoryReports } from '@/routes/inventory/reports';
+import { index as inventoryTransfers } from '@/routes/inventory/transfers';
+import { index as inventoryWarehouses } from '@/routes/inventory/warehouses';
 import { home as posHome, settings as posSettings } from '@/routes/pos';
 import { index as posReports } from '@/routes/pos/reports';
 import { index as posSales } from '@/routes/pos/sales';
@@ -53,7 +64,7 @@ import { create as quickPurchase } from '@/routes/purchases/quick';
 import { index as receipts } from '@/routes/purchases/receipts';
 import { index as purchaseReturns } from '@/routes/purchases/returns';
 import { index as suppliers } from '@/routes/purchases/suppliers';
-import { dashboard as sales } from '@/routes/sales';
+import { dashboard as sales, settings as salesSettings } from '@/routes/sales';
 import { index as fulfillments } from '@/routes/sales/fulfillments';
 import {
     create as createSale,
@@ -158,7 +169,68 @@ export function AppSidebar() {
                               : []),
                           { title: 'Atendimentos', href: fulfillments() },
                           { title: 'Devoluções', href: saleReturns() },
+                          ...(tenant.can('sales.manage_settings')
+                              ? [
+                                    {
+                                        title: 'Configurações',
+                                        href: salesSettings(),
+                                    },
+                                ]
+                              : []),
                       ],
+                  },
+              ]
+            : []),
+        ...(tenant.can('inventory.view')
+            ? [
+                  {
+                      title: 'Estoque',
+                      href: inventoryDashboard(),
+                      icon: Warehouse,
+                      items: [
+                          {
+                              permission: 'inventory.view',
+                              title: 'Visão geral',
+                              href: inventoryDashboard(),
+                          },
+                          {
+                              permission: 'inventory.view',
+                              title: 'Mercadorias',
+                              href: inventoryItems(),
+                          },
+                          {
+                              permission: 'inventory.view',
+                              title: 'Movimentações',
+                              href: inventoryMovements(),
+                          },
+                          {
+                              permission: 'inventory.view',
+                              title: 'Transferências',
+                              href: inventoryTransfers(),
+                          },
+                          {
+                              permission: 'inventory.view',
+                              title: 'Depósitos',
+                              href: inventoryWarehouses(),
+                          },
+                          {
+                              permission: 'inventory.view',
+                              title: 'Inventários',
+                              href: inventoryCounts(),
+                          },
+                          {
+                              permission: 'inventory.view_reports',
+                              title: 'Relatórios',
+                              href: inventoryReports(),
+                          },
+                          {
+                              permission: 'inventory.manage_settings',
+                              title: 'Configurações',
+                              href: inventorySettings(),
+                          },
+                      ]
+                          .filter(({ permission }) => tenant.can(permission))
+                          .map(({ title, href }) => ({ title, href })),
                   },
               ]
             : []),

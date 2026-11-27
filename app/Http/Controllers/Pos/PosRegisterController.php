@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Pos;
 
 use App\Http\Requests\Pos\PosCartRequest;
 use App\Modules\Core\Commerce\PaymentMethod;
+use App\Modules\Inventory\Services\StockModule;
 use App\Modules\Pos\Enums\CashMovementType;
 use App\Modules\Pos\Enums\PosPermission;
 use App\Modules\Pos\Enums\PosSaleStatus;
@@ -35,6 +36,7 @@ class PosRegisterController extends PosController
         private PosCatalog $catalog,
         private PosModule $module,
         private PosPresenter $presenter,
+        private StockModule $stock,
     ) {}
 
     public function show(Request $request, PosSession $session): Response
@@ -65,7 +67,7 @@ class PosRegisterController extends PosController
                 'close' => $this->can($request, PosPermission::CloseSession),
                 'register_items' => $this->can($request, PosPermission::ManageSettings),
             ],
-            'stockEnabled' => $this->module->isEnabled($company, 'products'),
+            'stockEnabled' => $this->stock->isEnabled($company),
             'today' => $this->today($request),
         ]);
     }

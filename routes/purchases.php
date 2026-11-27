@@ -20,6 +20,7 @@ Route::prefix('purchases')->name('purchases.')->middleware(['tenant', 'tenant.re
     Route::middleware('module.permission:purchases,purchases.create')->group(function (): void {
         Route::get('orders/create', [PurchaseOrderController::class, 'create'])->name('orders.create');
         Route::post('orders', [PurchaseOrderController::class, 'store'])->name('orders.store');
+        Route::post('items', [PurchaseOrderController::class, 'storeItem'])->name('items.store');
     });
     Route::middleware(['module.permission:purchases,purchases.create', 'module.permission:purchases,purchases.confirm', 'module.permission:purchases,purchases.receive', 'module.permission:purchases,purchases.manage_cost'])->group(function (): void {
         Route::get('quick', [QuickPurchaseController::class, 'create'])->name('quick.create');

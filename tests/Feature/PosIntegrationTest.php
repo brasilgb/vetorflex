@@ -112,7 +112,7 @@ test('the module is registered as independent with optional integrations', funct
 
     $pos = PlatformModule::query()->where('identifier', 'pos')->sole();
     expect($pos)->development_status->toBe('implemented')->dependencies->toBe([])->commercially_available->toBeFalse()
-        ->optional_integrations->toBe(['customers', 'products', 'sales', 'finance']);
+        ->optional_integrations->toBe(['customers', 'products', 'inventory', 'sales', 'finance']);
     expect(array_column($pos->permissions, 'key'))->toHaveCount(15);
     expect(CompanyModule::query()->count())->toBe(0);
 });

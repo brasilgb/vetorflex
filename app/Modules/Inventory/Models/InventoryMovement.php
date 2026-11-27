@@ -17,6 +17,8 @@ use LogicException;
  * @property int $id
  * @property int $company_id
  * @property int $product_variant_id
+ * @property int|null $inventory_warehouse_id Depósito; nulo somente em registros anteriores aos depósitos sem saldo.
+ * @property string|null $warehouse_balance_after Saldo do depósito após a movimentação.
  * @property MovementType $type
  * @property string $quantity Quantidade com sinal: positiva para entrada, negativa para saída.
  * @property string $balance_before
@@ -34,10 +36,11 @@ use LogicException;
  * @property CarbonImmutable $occurred_at
  * @property-read ProductVariant $variant
  * @property-read InventoryMovement|null $reversal
+ * @property-read InventoryWarehouse|null $warehouse
  */
 class InventoryMovement extends Model
 {
-    protected $fillable = ['company_id', 'product_variant_id', 'type', 'quantity', 'balance_before', 'balance_after', 'unit_cost', 'origin', 'reference_type', 'reference_id', 'reversal_of_id', 'user_id', 'user_name', 'reason', 'idempotency_key', 'request_hash', 'occurred_at'];
+    protected $fillable = ['company_id', 'product_variant_id', 'inventory_warehouse_id', 'warehouse_balance_after', 'type', 'quantity', 'balance_before', 'balance_after', 'unit_cost', 'origin', 'reference_type', 'reference_id', 'reversal_of_id', 'user_id', 'user_name', 'reason', 'idempotency_key', 'request_hash', 'occurred_at'];
 
     protected static function booted(): void
     {
@@ -53,6 +56,7 @@ class InventoryMovement extends Model
             'quantity' => 'decimal:4',
             'balance_before' => 'decimal:4',
             'balance_after' => 'decimal:4',
+            'warehouse_balance_after' => 'decimal:4',
             'unit_cost' => 'decimal:4',
             'occurred_at' => 'datetime',
         ];
@@ -62,6 +66,12 @@ class InventoryMovement extends Model
     public function variant(): BelongsTo
     {
         return $this->belongsTo(ProductVariant::class, 'product_variant_id');
+    }
+
+    /** @return BelongsTo<InventoryWarehouse, $this> */
+    public function warehouse(): BelongsTo
+    {
+        return $this->belongsTo(InventoryWarehouse::class, 'inventory_warehouse_id');
     }
 
     /** @return HasOne<InventoryMovement, $this> */

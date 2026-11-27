@@ -3,11 +3,17 @@
 namespace App\Modules\Inventory\Services;
 
 use App\Models\User;
+use App\Modules\Core\Services\SequenceService;
 use App\Modules\Inventory\Data\StockOperation;
+use App\Modules\Inventory\Enums\MovementOrigin;
 use App\Modules\Inventory\Enums\MovementType;
 use App\Modules\Inventory\Models\InventoryBalance;
 use App\Modules\Inventory\Models\InventoryMovement;
+use App\Modules\Inventory\Models\InventoryTransfer;
+use App\Modules\Inventory\Models\InventoryWarehouse;
+use App\Modules\Inventory\Models\InventoryWarehouseBalance;
 use App\Modules\Products\Models\ProductVariant;
+use App\Modules\Tenancy\Models\Company;
 use Brick\Math\BigDecimal;
 use Brick\Math\Exception\MathException;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -21,10 +27,15 @@ use Illuminate\Validation\ValidationException;
  *
  * Saídas respeitam as reservas (InventoryReservationService). Ajustes de contagem e estornos refletem a realidade
  * física e não são bloqueados por elas.
+ *
+ * Cada movimentação pertence a um depósito (o principal quando não informado). `inventory_balances` é o saldo total da
+ * empresa e `inventory_warehouse_balances`, o saldo por depósito; os dois são gravados juntos, sob a mesma trava.
+ * O ajuste define o saldo do depósito. Estoque negativo é recusado, salvo quando a empresa o permite
+ * (`StockModule::allowsNegative`); transferências nunca deixam o depósito de origem negativo.
  */
 class InventoryService
 {
-    public function __construct(private AverageCostCalculator $costs) {}
+    public function __construct(private AverageCostCalculator $costs, private WarehouseService $warehouses, private StockModule $module, private SequenceService $sequences) {}
 
     private const SCALE = 4;
 
@@ -53,6 +64,23 @@ class InventoryService
 
         foreach ($variantIds as $variantId) {
             $result[$variantId] = $balances->get($variantId)->quantity ?? '0.0000';
+        }
+
+        return $result;
+    }
+
+    /**
+     * Saldos por depósito.
+     *
+     * @param  list<int>  $variantIds
+     * @return array<int, array<int, string>> Unidade comercializável => depósito => quantidade.
+     */
+    public function warehouseBalancesOf(int $companyId, array $variantIds): array
+    {
+        $result = array_fill_keys($variantIds, []);
+
+        foreach (InventoryWarehouseBalance::query()->where('company_id', $companyId)->whereIn('product_variant_id', $variantIds)->get() as $balance) {
+            $result[$balance->product_variant_id][$balance->inventory_warehouse_id] = $balance->quantity;
         }
 
         return $result;
@@ -92,6 +120,10 @@ class InventoryService
             throw ValidationException::withMessages(['movement' => 'Um estorno não pode ser estornado.']);
         }
 
+        if (in_array($movement->type, [MovementType::TransferOut, MovementType::TransferIn], true)) {
+            throw ValidationException::withMessages(['movement' => 'Transferências são corrigidas por uma transferência no sentido inverso.']);
+        }
+
         return $this->record(MovementType::Reversal, new StockOperation(
             companyId: $movement->company_id,
             variantId: $movement->product_variant_id,
@@ -103,7 +135,63 @@ class InventoryService
             referenceId: $movement->reference_id,
             idempotencyKey: $idempotencyKey,
             unitCost: $movement->unit_cost,
+            warehouseId: $movement->inventory_warehouse_id,
         ), $movement);
+    }
+
+    /**
+     * Transfere quantidades entre dois depósitos da empresa numa única transação. Repetir a chave devolve a
+     * transferência já registrada.
+     *
+     * @param  array<int, string>  $quantities  Unidade comercializável => quantidade.
+     */
+    public function transfer(Company $company, int $fromWarehouseId, int $toWarehouseId, array $quantities, ?User $user, ?string $reason, string $idempotencyKey): InventoryTransfer
+    {
+        $existing = InventoryTransfer::query()->where('company_id', $company->id)->where('idempotency_key', $idempotencyKey)->first();
+
+        if ($existing !== null) {
+            return $existing;
+        }
+
+        if ($fromWarehouseId === $toWarehouseId) {
+            throw ValidationException::withMessages(['to_warehouse_id' => 'Escolha depósitos de origem e destino diferentes.']);
+        }
+
+        if ($quantities === []) {
+            throw ValidationException::withMessages(['items' => 'Informe ao menos um item.']);
+        }
+
+        $from = $this->warehouses->resolve($company->id, $fromWarehouseId);
+        $to = $this->warehouses->resolve($company->id, $toWarehouseId);
+        ksort($quantities);
+
+        try {
+            return DB::transaction(function () use ($company, $from, $to, $quantities, $user, $reason, $idempotencyKey): InventoryTransfer {
+                $transfer = InventoryTransfer::create([
+                    'company_id' => $company->id,
+                    'number' => $this->sequences->next($company, 'inventory_transfer'),
+                    'from_warehouse_id' => $from->id,
+                    'to_warehouse_id' => $to->id,
+                    'user_id' => $user?->id,
+                    'user_name' => $user?->name,
+                    'reason' => $reason,
+                    'idempotency_key' => $idempotencyKey,
+                    'transferred_at' => now(),
+                ]);
+
+                foreach ($quantities as $variantId => $quantity) {
+                    foreach ([[MovementType::TransferOut, $from], [MovementType::TransferIn, $to]] as [$type, $warehouse]) {
+                        $operation = new StockOperation($company->id, (int) $variantId, (string) $quantity, MovementOrigin::Manual, $user, $reason ?? "Transferência #{$transfer->number}", 'inventory_transfer', (string) $transfer->id, "inventory-transfer:{$transfer->id}:{$type->value}:{$variantId}", warehouseId: $warehouse->id);
+                        $parsed = $this->parseQuantity($type, $operation->quantity);
+                        $this->recordLocked($type, $operation, $parsed, $this->requestHash($type, $operation, $parsed, null), null);
+                    }
+                }
+
+                return $transfer;
+            }, self::TRANSACTION_ATTEMPTS);
+        } catch (UniqueConstraintViolationException $exception) {
+            return InventoryTransfer::query()->where('company_id', $company->id)->where('idempotency_key', $idempotencyKey)->first() ?? throw $exception;
+        }
     }
 
     private function record(MovementType $type, StockOperation $operation, ?InventoryMovement $reversed = null): InventoryMovement
@@ -162,12 +250,15 @@ class InventoryService
             'updated_at' => now(),
         ]);
         $balance = InventoryBalance::query()->where('product_variant_id', $variant->id)->lockForUpdate()->firstOrFail();
+        $warehouse = $this->movementWarehouse($operation, $reversed);
+        $warehouseBalance = $this->lockWarehouseBalance($warehouse, $variant->id);
 
         $before = BigDecimal::of($balance->quantity);
+        $warehouseBefore = BigDecimal::of($warehouseBalance->quantity);
         $delta = match ($type) {
-            MovementType::Initial, MovementType::Entry => $quantity,
-            MovementType::Exit => $quantity->negated(),
-            MovementType::Adjustment => $quantity->minus($before),
+            MovementType::Initial, MovementType::Entry, MovementType::TransferIn => $quantity,
+            MovementType::Exit, MovementType::TransferOut => $quantity->negated(),
+            MovementType::Adjustment => $quantity->minus($warehouseBefore),
             MovementType::Reversal => BigDecimal::of($reversed->quantity ?? '0')->negated(),
         };
 
@@ -176,27 +267,34 @@ class InventoryService
         }
 
         $after = $before->plus($delta);
+        $warehouseAfter = $warehouseBefore->plus($delta);
+        $allowsNegative = $type !== MovementType::TransferOut && $this->module->allowsNegative($operation->companyId);
 
-        if ($after->isNegative()) {
-            throw ValidationException::withMessages(['quantity' => "Estoque insuficiente. Saldo disponível: {$this->format($before)}."]);
+        if (! $allowsNegative && ($after->isNegative() || $warehouseAfter->isNegative())) {
+            throw ValidationException::withMessages(['quantity' => $warehouseBefore->isLessThan($before)
+                ? "Estoque insuficiente em {$warehouse->name}. Saldo no depósito: {$this->format($warehouseBefore)}."
+                : "Estoque insuficiente. Saldo disponível: {$this->format($before)}."]);
         }
 
         // Saídas não consomem o reservado para outros documentos; quem reservou libera a reserva antes da saída.
+        // Com estoque negativo permitido, a empresa assume o risco e a trava de reserva não se aplica.
         $reserved = BigDecimal::of($balance->reserved_quantity ?? '0');
 
-        if ($type === MovementType::Exit && $after->isLessThan($reserved)) {
+        if ($type === MovementType::Exit && ! $allowsNegative && $after->isLessThan($reserved)) {
             $available = BigDecimal::max(BigDecimal::zero(), $before->minus($reserved));
 
             throw ValidationException::withMessages(['quantity' => "Estoque insuficiente: parte do saldo está reservada. Disponível: {$this->format($available)}."]);
         }
 
-        if ($after->isGreaterThan(self::MAXIMUM_QUANTITY)) {
+        if ($after->isGreaterThan(self::MAXIMUM_QUANTITY) || $warehouseAfter->isGreaterThan(self::MAXIMUM_QUANTITY)) {
             throw ValidationException::withMessages(['quantity' => 'O saldo resultante excede o limite permitido.']);
         }
 
         $movement = InventoryMovement::create([
             'company_id' => $operation->companyId,
             'product_variant_id' => $variant->id,
+            'inventory_warehouse_id' => $warehouse->id,
+            'warehouse_balance_after' => (string) $warehouseAfter->toScale(self::SCALE),
             'type' => $type,
             'quantity' => (string) $delta->toScale(self::SCALE),
             'balance_before' => (string) $before->toScale(self::SCALE),
@@ -218,8 +316,34 @@ class InventoryService
             'quantity' => (string) $after->toScale(self::SCALE),
             'average_cost' => $this->costs->apply($variant, $movement, $balance->average_cost, $operation->entryValue, $reversed),
         ])->save();
+        $warehouseBalance->forceFill(['quantity' => (string) $warehouseAfter->toScale(self::SCALE)])->save();
 
         return $movement;
+    }
+
+    private function movementWarehouse(StockOperation $operation, ?InventoryMovement $reversed): InventoryWarehouse
+    {
+        if ($reversed !== null) {
+            return $reversed->inventory_warehouse_id !== null
+                ? InventoryWarehouse::query()->where('company_id', $operation->companyId)->findOrFail($reversed->inventory_warehouse_id)
+                : $this->warehouses->defaultFor($operation->companyId);
+        }
+
+        return $this->warehouses->resolve($operation->companyId, $operation->warehouseId);
+    }
+
+    private function lockWarehouseBalance(InventoryWarehouse $warehouse, int $variantId): InventoryWarehouseBalance
+    {
+        InventoryWarehouseBalance::query()->insertOrIgnore([
+            'company_id' => $warehouse->company_id,
+            'inventory_warehouse_id' => $warehouse->id,
+            'product_variant_id' => $variantId,
+            'quantity' => '0',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return InventoryWarehouseBalance::query()->where('inventory_warehouse_id', $warehouse->id)->where('product_variant_id', $variantId)->lockForUpdate()->firstOrFail();
     }
 
     private function existingMovement(StockOperation $operation, string $requestHash, bool $lock = false): ?InventoryMovement
@@ -290,6 +414,7 @@ class InventoryService
             $operation->referenceId,
             $reversed?->id,
             ...($operation->entryValue === null ? [] : [$operation->entryValue]),
+            ...($operation->warehouseId === null || $reversed !== null ? [] : ['warehouse' => $operation->warehouseId]),
         ]));
     }
 

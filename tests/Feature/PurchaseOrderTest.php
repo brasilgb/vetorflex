@@ -209,20 +209,16 @@ test('works without customers and finance, and purchases access does not grant p
     $this->get('/products')->assertForbidden();
 });
 
-test('rootadmin can only activate purchases after products', function () {
+test('rootadmin activates purchases on its own, without contracting products', function () {
     $this->seed(PlatformModuleSeeder::class);
     $root = User::factory()->create(['is_root_admin' => true]);
     $company = Company::factory()->create();
     $purchases = PlatformModule::query()->where('identifier', 'purchases')->sole();
 
-    expect($purchases)->development_status->toBe(PlatformModule::IMPLEMENTED)->version->toBe('1.0.0')->dependencies->toBe(['products']);
+    expect($purchases)->development_status->toBe(PlatformModule::IMPLEMENTED)->version->toBe('1.0.0')->dependencies->toBe([]);
     expect(array_column($purchases->permissions, 'key'))->toContain('purchases.view_cost', 'purchases.import_suppliers');
     expect(CompanyModule::query()->where('platform_module_id', $purchases->id)->exists())->toBeFalse();
 
-    $this->actingAs($root)->post("/rootadmin/companies/{$company->id}/modules/{$purchases->id}")->assertSessionHasErrors('module');
-
-    $products = PlatformModule::query()->where('identifier', 'products')->sole();
-    $this->actingAs($root)->post("/rootadmin/companies/{$company->id}/modules/{$products->id}");
     $this->actingAs($root)->post("/rootadmin/companies/{$company->id}/modules/{$purchases->id}")->assertSessionHasNoErrors();
 
     expect(CompanyModule::query()->where('company_id', $company->id)->where('platform_module_id', $purchases->id)->whereNull('deactivated_at')->exists())->toBeTrue();

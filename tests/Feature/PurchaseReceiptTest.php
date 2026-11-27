@@ -1,11 +1,14 @@
 <?php
 
+use App\Modules\Core\Services\SequenceService;
 use App\Modules\Inventory\Data\StockOperation;
 use App\Modules\Inventory\Enums\MovementOrigin;
 use App\Modules\Inventory\Models\InventoryCostChange;
 use App\Modules\Inventory\Models\InventoryMovement;
 use App\Modules\Inventory\Services\AverageCostCalculator;
 use App\Modules\Inventory\Services\InventoryService;
+use App\Modules\Inventory\Services\StockModule;
+use App\Modules\Inventory\Services\WarehouseService;
 use App\Modules\Parties\Models\Party;
 use App\Modules\Products\Models\ProductVariant;
 use App\Modules\Purchases\Enums\PurchaseOrderStatus;
@@ -125,7 +128,7 @@ test('a failed inventory entry rolls back the whole receipt', function () {
     {
         public function __construct(AverageCostCalculator $costs, private int $failingVariantId)
         {
-            parent::__construct($costs);
+            parent::__construct($costs, app(WarehouseService::class), app(StockModule::class), app(SequenceService::class));
         }
 
         public function recordEntry(StockOperation $operation): InventoryMovement

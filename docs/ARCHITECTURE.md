@@ -7,7 +7,7 @@ A aplicação é um monólito modular Laravel. Os domínios em `app/Modules` del
 - `Core`: auditoria, numeração por empresa, CSV, documentos comerciais em PDF e condições de pagamento (`Core\Commerce`).
 - `Customers` e `Parties`: clientes e domínio compartilhado de pessoas.
 - `Products`: catálogo e unidades comercializáveis (`PRODUCTS.md`).
-- `Inventory`: único ponto de escrita de saldo e custo médio (`INVENTORY-CORE.md`, `INVENTORY-COSTING.md`).
+- `Inventory`: único ponto de escrita de saldo (total e por depósito) e custo médio (`INVENTORY-CORE.md`, `INVENTORY-COSTING.md`). É também o módulo comercial Estoque (`inventory`, `STOCK.md`): depósitos, transferências, inventários, alertas e relatórios, com controle ativado por Estoque ou Produtos (`StockModule`).
 - `Purchases`: fornecedores, pedidos, recebimentos, devoluções e indicadores (`PURCHASES.md`, `SUPPLIERS.md`).
 - `Sales`: orçamentos, vendas, atendimentos, devoluções e indicadores (`SALES.md`). Integra-se aos demais por contratos públicos e eventos após o commit.
 - `Finance`: contas a pagar e a receber, baixas, livro de movimentações, transferências, recorrências, fluxo de caixa, conciliação e relatórios (`FINANCE.md`). Independente: consome `SaleReceivableSource` e `PurchaseObligationSource` por ouvintes que só agem com o módulo habilitado.

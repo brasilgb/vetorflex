@@ -8,10 +8,15 @@ use App\Http\Controllers\Sales\SaleOrderController;
 use App\Http\Controllers\Sales\SaleQuoteController;
 use App\Http\Controllers\Sales\SaleReturnController;
 use App\Http\Controllers\Sales\SalesDashboardController;
+use App\Http\Controllers\Sales\SalesSettingsController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('sales')->name('sales.')->middleware(['tenant', 'tenant.records', 'module.permission:sales,sales.view'])->group(function (): void {
     Route::get('/', SalesDashboardController::class)->name('dashboard');
+    Route::middleware('module.permission:sales,sales.manage_settings')->group(function (): void {
+        Route::get('settings', [SalesSettingsController::class, 'edit'])->name('settings');
+        Route::put('settings', [SalesSettingsController::class, 'update'])->name('settings.update');
+    });
 
     Route::get('customers/lookup', [SaleCustomerController::class, 'lookup'])->name('customers.lookup');
     Route::post('customers', [SaleCustomerController::class, 'store'])->middleware('module.permission:sales,sales.register_customers')->name('customers.store');

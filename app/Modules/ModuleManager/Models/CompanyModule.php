@@ -16,16 +16,19 @@ class CompanyModule extends Model
         return ['activated_at' => 'datetime', 'deactivated_at' => 'datetime'];
     }
 
+    /** @return BelongsTo<Company, $this> */
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
     }
 
+    /** @return BelongsTo<PlatformModule, $this> */
     public function module(): BelongsTo
     {
         return $this->belongsTo(PlatformModule::class, 'platform_module_id');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function activatedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'activated_by');

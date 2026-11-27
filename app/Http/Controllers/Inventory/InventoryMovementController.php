@@ -72,7 +72,7 @@ class InventoryMovementController extends Controller
             MovementType::Entry => $this->inventory->recordEntry($operation),
             MovementType::Exit => $this->inventory->recordExit($operation),
             MovementType::Adjustment => $this->inventory->adjustTo($operation),
-            MovementType::Reversal => abort(422),
+            MovementType::Reversal, MovementType::TransferOut, MovementType::TransferIn => abort(422),
         };
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Movimentação registrada.']);
 
