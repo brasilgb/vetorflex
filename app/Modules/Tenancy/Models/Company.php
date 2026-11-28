@@ -3,7 +3,9 @@
 namespace App\Modules\Tenancy\Models;
 
 use App\Models\User;
+use App\Modules\Commercial\Enums\CommercialStatus;
 use App\Modules\ModuleManager\Models\CompanyModule;
+use Carbon\CarbonImmutable;
 use Database\Factories\Modules\Tenancy\Models\CompanyFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,17 +20,24 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $timezone
  * @property string $currency
  * @property array<string, mixed>|null $settings
+ * @property string|null $document
+ * @property CommercialStatus $commercial_status
+ * @property CarbonImmutable|null $trial_started_at
+ * @property CarbonImmutable|null $trial_ends_at
+ * @property CarbonImmutable|null $contracted_at
+ * @property string $origin `public`, `admin` ou `demo`.
+ * @property string|null $provisioning_key
  */
 class Company extends Model
 {
     /** @use HasFactory<CompanyFactory> */
     use HasFactory;
 
-    protected $fillable = ['name', 'slug', 'status', 'timezone', 'currency', 'settings'];
+    protected $fillable = ['name', 'slug', 'status', 'timezone', 'currency', 'settings', 'document', 'commercial_status', 'trial_started_at', 'trial_ends_at', 'contracted_at', 'origin', 'provisioning_key'];
 
     protected function casts(): array
     {
-        return ['settings' => 'array'];
+        return ['settings' => 'array', 'commercial_status' => CommercialStatus::class, 'trial_started_at' => 'datetime', 'trial_ends_at' => 'datetime', 'contracted_at' => 'datetime'];
     }
 
     /** @return BelongsToMany<User, $this, CompanyMembership, 'pivot'> */

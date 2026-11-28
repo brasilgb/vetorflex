@@ -165,3 +165,40 @@ Rascunho, Aguardando processamento, Processando, Autorizado, Rejeitado, Denegado
 - Liberação de produção pelo RootAdmin, após a homologação acompanhada.
 
 Nenhuma emissão real foi feita nesta etapa.
+
+## Verificações da OMNICHANNEL-11
+
+Documentação da Spedy relida em 28/11/2026. Nenhuma emissão real foi feita.
+
+- **Endpoints confirmados**:
+    - NFS-e: `DELETE /v1/service-invoices/{id}` (cancelamento), `POST .../{id}/check-status`, `GET .../{id}/pdf` e `GET .../{id}/xml`;
+    - NFC-e: `POST /v1/consumer-invoices/{id}/check-status`;
+    - webhook: `POST /v1/webhooks` com `event` (até 80 caracteres) e `url` (até 200).
+    - Para o webhook há divergência na documentação: a página de criação aceita `invoice.status_changed`, `invoice.authorized`, `invoice.rejected` e `invoice.canceled`; o VetorFlex registra `invoice.status_changed`.
+- **Ainda não confirmados** (validar na homologação):
+    - a lista de campos obrigatórios de NF-e e NFC-e: o schema só marca `isFinalCustomer`;
+    - o campo `discountAmount` do item, não visto no schema (`additionalProperties` não informado);
+    - o status HTTP de criação repetida com o mesmo `integrationId`;
+    - o formato do corpo de erro.
+- **Formas de pagamento**: `debitCard` e `check` confirmadas e mapeadas. Vale e outras formas seguem `other`.
+- **Códigos SPD transitórios**: SPD001, SPD002, SPD006, SPD998 e SPD999 mantêm o documento "Processando", sem reemissão. SPD003, SPD004 e SPD005 são definitivos.
+- **Composição dos totais**:
+    - NFS-e: `total.invoiceAmount` = soma de quantidade × valor dos itens; `discountUnconditionedAmount` = soma dos descontos.
+    - NF-e e NFC-e: `totalAmount` por item = quantidade × valor unitário; desconto por item; um pagamento com o total do documento (itens − descontos).
+    - Frete e outras despesas não entram (a tela avisa) e IPI e ICMS-ST não são calculados. O total do documento pode divergir do total da venda quando ela tem frete.
+- **IBS/CBS (Reforma Tributária)**:
+    - os blocos existem: `items[].taxes.ibsCbs` e `items[].taxes.is` na NF-e e NFC-e; `ibsCbs` no nível da nota na NFS-e;
+    - os campos obrigatórios variam com a fase de transição;
+    - na NFS-e, é preciso habilitar os campos em Configurações > Geral da Spedy;
+    - as alíquotas de transição devem ser conferidas no cronograma oficial.
+    - O VetorFlex ainda **não envia** esses blocos: pendência a resolver com o contador e na homologação, antes da produção.
+- **Contingência da NFC-e**:
+    - exige `consumerInvoice.allowOfflineContingency` com `tokenId` e `csc`;
+    - a Spedy decide quando usar a contingência; a nota fica `inContingent` e não pode ser cancelada nesse estado.
+    - O VetorFlex não habilita a contingência (não declarada) e trata `inContingent` como "Processando".
+    - NF-e usa SVC (transparente); NFS-e não tem contingência.
+- **Ambientes**:
+    - "Simulação" (NFS-e) só exercita o fluxo, sem validação municipal real;
+    - "Homologação" usa a autoridade fiscal sem validade;
+    - uma nota aprovada em simulação ainda pode ser rejeitada em produção.
+- **Workers e agendador**: a transmissão, os arquivos e os webhooks dependem de `queue:work`; a conciliação, de `schedule:run` (ver `DEPLOYMENT.md`).

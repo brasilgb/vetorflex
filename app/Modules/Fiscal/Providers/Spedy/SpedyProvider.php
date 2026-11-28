@@ -40,6 +40,9 @@ class SpedyProvider implements FiscalProvider
         'disabled' => FiscalStatus::CommunicationFailure,
     ];
 
+    /** Códigos SPD transitórios (docs.spedy.com.br, "Erros e rejeições"). */
+    private const TRANSITIONAL_CODES = ['SPD001', 'SPD002', 'SPD006', 'SPD998', 'SPD999'];
+
     public function __construct(private SpedyPayloadBuilder $payloads) {}
 
     public function identifier(): string
@@ -221,6 +224,12 @@ class SpedyProvider implements FiscalProvider
         $number = $invoice['number'] ?? null;
         $message = trim((string) ($detail['message'] ?? ''));
         $code = trim((string) ($detail['code'] ?? ''));
+
+        // Códigos transitórios da Spedy (RPS em processamento, cancelamento em andamento, nota na fila, erro interno
+        // ou de comunicação com SEFAZ/prefeitura, que a Spedy retenta): seguir aguardando, nunca reemitir.
+        if ($status === FiscalStatus::Rejected && in_array($code, self::TRANSITIONAL_CODES, true)) {
+            $status = FiscalStatus::Processing;
+        }
 
         return new ProviderDocument(
             reference: isset($invoice['id']) ? (string) $invoice['id'] : null,

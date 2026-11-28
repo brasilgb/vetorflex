@@ -36,8 +36,8 @@ class SpedyPayloadBuilder
     /** CSTs de PIS/COFINS que exigem base e alíquota, não suportadas na emissão automática. */
     private const PIS_COFINS_CST_WITH_RATE = [1, 2, 3];
 
-    /** Somente os códigos usados em produção pelo VetorOS; os demais métodos seguem como `other`. */
-    private const PAYMENT_METHODS = ['pix' => 'pix', 'credit_card' => 'creditCard', 'cash' => 'money', 'transfer' => 'bankTransfer', 'bank_slip' => 'billetBanking'];
+    /** Códigos de `payments[].method` confirmados na documentação da Spedy; vale-presente e demais seguem como `other`. */
+    private const PAYMENT_METHODS = ['pix' => 'pix', 'credit_card' => 'creditCard', 'debit_card' => 'debitCard', 'cash' => 'money', 'cheque' => 'check', 'transfer' => 'bankTransfer', 'bank_slip' => 'billetBanking'];
 
     /** @return array<string, mixed> */
     public function company(FiscalSetting $setting): array

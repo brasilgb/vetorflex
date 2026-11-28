@@ -10,3 +10,4 @@ export type * from './pos';
 export type * from './inventory';
 export type * from './payments';
 export type * from './fiscal';
+export type * from './commercial';

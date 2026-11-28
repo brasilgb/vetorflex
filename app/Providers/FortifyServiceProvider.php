@@ -65,8 +65,9 @@ class FortifyServiceProvider extends ServiceProvider
             'status' => $request->session()->get('status'),
         ]));
 
-        Fortify::registerView(fn () => Inertia::render('auth/register', [
-            'passwordRules' => Password::defaults()->toPasswordRulesString(),
+        Fortify::verifyEmailView(fn (Request $request) => Inertia::render('auth/verify-email', [
+            'status' => $request->session()->get('status'),
+            'email' => $request->user()?->email,
         ]));
 
     }
@@ -82,6 +83,10 @@ class FortifyServiceProvider extends ServiceProvider
 
             return Limit::perMinute(5)->by($throttleKey);
         });
+
+        // Cadastro público e contato comercial: poucas tentativas por IP para conter abuso e duplicidade.
+        RateLimiter::for('signup', fn (Request $request) => Limit::perMinute(5)->by($request->ip()));
+        RateLimiter::for('contact', fn (Request $request) => Limit::perHour(10)->by($request->ip()));
 
     }
 }

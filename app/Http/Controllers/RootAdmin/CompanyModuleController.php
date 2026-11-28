@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\RootAdmin;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Commercial\Services\CompanyProvisioning;
 use App\Modules\ModuleManager\Models\PlatformModule;
 use App\Modules\ModuleManager\Services\ModuleActivationService;
 use App\Modules\Tenancy\Models\Company;
@@ -21,8 +22,9 @@ class CompanyModuleController extends Controller
     public function store(Request $request, Company $company, PlatformModule $module): RedirectResponse
     {
         Gate::authorize('update', $company);
-        $this->activation->activate($company, $module, $request->user());
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Módulo ativado para a empresa.']);
+        // As dependências obrigatórias são ativadas junto; o período de teste não muda.
+        $activated = app(CompanyProvisioning::class)->addApplications($company, $request->user(), [$module->identifier], onlyAvailable: false);
+        Inertia::flash('toast', ['type' => 'success', 'message' => count($activated) > 1 ? 'Módulo ativado com as dependências: '.implode(', ', $activated).'.' : 'Módulo ativado para a empresa.']);
 
         return to_route('root-admin.companies.index');
     }

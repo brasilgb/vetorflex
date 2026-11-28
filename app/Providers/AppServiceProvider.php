@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Modules\Commercial\Listeners\ProvisionVerifiedSignup;
 use App\Modules\Finance\Listeners\SyncPaymentOperations;
 use App\Modules\Finance\Listeners\SyncPosOperations;
 use App\Modules\Finance\Listeners\SyncPurchaseObligations;
@@ -28,6 +29,7 @@ use App\Modules\Sales\Services\SaleReceivables;
 use App\Modules\Tenancy\Models\Company;
 use App\Policies\Modules\Tenancy\Policies\CompanyPolicy;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Events\Verified;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -64,6 +66,7 @@ class AppServiceProvider extends ServiceProvider
         Event::listen([SaleConfirmed::class, SaleCancelled::class, SaleReturnRegistered::class, SaleBalanceClosed::class, SaleFulfillmentReversed::class], SyncSaleReceivables::class);
         Event::listen([PurchaseConfirmed::class, PurchaseCancelled::class, PurchaseReturnRegistered::class, PurchaseBalanceClosed::class, PurchaseReceiptReversed::class], SyncPurchaseObligations::class);
         Event::listen([PosSaleCompleted::class, PosRefundIssued::class, PosCashMovementRecorded::class], SyncPosOperations::class);
+        Event::listen(Verified::class, ProvisionVerifiedSignup::class);
         Event::listen([PaymentReceived::class, PaymentRefundConfirmed::class], SyncPaymentOperations::class);
     }
 

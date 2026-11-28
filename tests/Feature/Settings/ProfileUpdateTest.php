@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Modules\Tenancy\Models\Company;
 
 test('profile page is displayed', function () {
     $user = User::factory()->create();
@@ -121,6 +122,16 @@ test('correct password must be provided to delete account', function () {
     $response
         ->assertSessionHasErrors('password')
         ->assertRedirect(route('profile.edit'));
+
+    expect($user->fresh())->not->toBeNull();
+});
+
+test('the only owner of a company cannot delete the account', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->create();
+    $user->companies()->attach($company, ['role' => 'owner', 'is_active' => true, 'permissions' => []]);
+
+    $this->actingAs($user)->delete(route('profile.destroy'), ['password' => 'password'])->assertSessionHasErrors('password');
 
     expect($user->fresh())->not->toBeNull();
 });

@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Commercial\Services\TrialService;
 use App\Modules\Finance\Services\FinanceRecurrenceService;
 use App\Modules\Fiscal\Services\FiscalDocumentService;
 use App\Modules\Payments\Services\WebhookService;
@@ -59,3 +60,9 @@ Artisan::command('fiscal:reconcile', function (FiscalDocumentService $documents)
 })->purpose('Consulta o provedor fiscal para documentos pendentes e recoloca na fila os que ficaram aguardando');
 
 Schedule::command('fiscal:reconcile')->everyFiveMinutes()->withoutOverlapping();
+
+Artisan::command('commercial:expire-trials', function (TrialService $trials) {
+    $this->info('Períodos de teste encerrados: '.$trials->expireOverdue().'.');
+})->purpose('Marca como encerrados os períodos de teste vencidos (o bloqueio de gravação já vale pelo vencimento)');
+
+Schedule::command('commercial:expire-trials')->dailyAt('00:10');

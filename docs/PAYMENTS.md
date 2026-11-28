@@ -117,3 +117,14 @@ Nesses ambientes, o seeder torna a Efí disponível.
 - A tarifa do Pix não é informada pela consulta documentada; taxas e líquido ficam vazios.
 - A segunda via é a impressão da página da cobrança (QR Code e copia e cola), não um PDF próprio.
 - Devolução de cobrança de venda não altera a venda; o acerto comercial segue em Vendas.
+
+## Verificação da OMNICHANNEL-11 (webhook Efí)
+
+- **Registro**: `x-skip-mtls-checking: true`, prática da integração em produção do VetorOS.
+- **Autenticação da origem**:
+    - token secreto de 48 caracteres na URL (o hash é guardado; o token é exibido só na configuração);
+    - lista de IPs opcional (`payments.webhooks.enforce_ips`);
+    - limite de 120 requisições por minuto.
+- **Confirmação**: nenhum pagamento é confirmado pelo conteúdo do webhook. A cobrança é sempre consultada na API da Efí com a credencial da empresa.
+- **mTLS no servidor web**: opcional. Só pode ser ativado se o registro for feito sem o cabeçalho de dispensa. Pendente de decisão de infraestrutura, junto com a lista de IPs da Efí em produção.
+- **Dependências**: a confirmação depende do worker de fila; a conciliação, do agendador (`payments:reconcile`).

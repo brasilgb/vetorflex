@@ -448,3 +448,10 @@ test('documents export to CSV', function () {
     expect($this->get('/fiscal/documents/export')->assertOk()->streamedContent())->toStartWith("\u{FEFF}")->toContain('NFS-e')->toContain('Autorizado');
     expect($this->get('/fiscal/reports/csv')->assertOk()->streamedContent())->toContain('Autorizado');
 });
+
+test('transitional provider codes keep the document processing instead of rejecting it', function () {
+    $provider = app(SpedyProvider::class);
+
+    expect($provider->toDocument(['id' => 'n1', 'status' => 'rejected', 'processingDetail' => ['code' => 'SPD999', 'message' => 'Comunicação com a SEFAZ']])->status)->toBe(FiscalStatus::Processing)
+        ->and($provider->toDocument(['id' => 'n1', 'status' => 'rejected', 'processingDetail' => ['code' => 'SPD003', 'message' => 'Campo inválido']])->status)->toBe(FiscalStatus::Rejected);
+});

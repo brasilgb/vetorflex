@@ -1,5 +1,6 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import {
+    Blocks,
     FileText,
     KeyRound,
     LayoutGrid,
@@ -79,6 +80,7 @@ import { index as brands } from '@/routes/products/brands';
 import { index as categories } from '@/routes/products/categories';
 import { index as movements } from '@/routes/products/movements';
 import { index as units } from '@/routes/products/units';
+import { index as companyApplications } from '@/routes/company/applications';
 import { index as members } from '@/routes/company/members';
 import { dashboard as purchases } from '@/routes/purchases';
 import { index as purchaseOrders } from '@/routes/purchases/orders';
@@ -100,6 +102,7 @@ import {
 } from '@/routes/root-admin';
 import { index as administrators } from '@/routes/root-admin/administrators';
 import { index as auditLogs } from '@/routes/root-admin/audit';
+import { index as contacts } from '@/routes/root-admin/contacts';
 import { index as rootAdminFiscal } from '@/routes/root-admin/fiscal';
 import { index as rootAdminPayments } from '@/routes/root-admin/payments';
 import { index as companies } from '@/routes/root-admin/companies';
@@ -111,7 +114,7 @@ export function AppSidebar() {
     const tenant = useTenant();
     const { auth } = usePage<{ auth: Auth }>().props;
     const mainNavItems: NavItem[] = [
-        { title: 'Dashboard', href: dashboard(), icon: LayoutGrid },
+        { title: 'Painel', href: dashboard(), icon: LayoutGrid },
         ...(tenant.hasModule('customers')
             ? [{ title: 'Clientes', href: '/customers', icon: UsersRound }]
             : []),
@@ -455,6 +458,15 @@ export function AppSidebar() {
                   },
               ]
             : []),
+        ...(tenant.activeCompany !== null
+            ? [
+                  {
+                      title: 'Aplicações da empresa',
+                      href: companyApplications(),
+                      icon: Blocks,
+                  },
+              ]
+            : []),
         ...(tenant.canManageTeam && tenant.activeCompany !== null
             ? [
                   {
@@ -474,7 +486,8 @@ export function AppSidebar() {
                           { title: 'Visão geral', href: rootAdminHome() },
                           { title: 'Empresas', href: companies() },
                           { title: 'Usuários', href: platformUsers() },
-                          { title: 'Catálogo de módulos', href: modules() },
+                          { title: 'Catálogo de aplicações', href: modules() },
+                          { title: 'Contatos comerciais', href: contacts() },
                           { title: 'Administradores', href: administrators() },
                           { title: 'Pagamentos', href: rootAdminPayments() },
                           {
