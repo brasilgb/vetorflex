@@ -1,8 +1,25 @@
 <?php
 
 use App\Models\User;
+use App\Modules\Finance\Enums\FinancePermission;
+use App\Modules\Finance\Models\FinanceAccount;
+use App\Modules\Fiscal\Enums\FiscalPermission;
+use App\Modules\Fiscal\Models\FiscalProviderAvailability;
+use App\Modules\Fiscal\Models\FiscalSetting;
+use App\Modules\Inventory\Data\StockOperation;
+use App\Modules\Inventory\Enums\InventoryPermission;
+use App\Modules\Inventory\Services\InventoryService;
 use App\Modules\ModuleManager\Models\CompanyModule;
 use App\Modules\ModuleManager\Models\PlatformModule;
+use App\Modules\Parties\Models\Party;
+use App\Modules\Parties\Models\PartyRole;
+use App\Modules\Payments\Enums\AccountStatus;
+use App\Modules\Payments\Enums\PaymentPermission;
+use App\Modules\Payments\Models\PaymentProviderAccount;
+use App\Modules\Payments\Models\PaymentProviderAvailability;
+use App\Modules\Pos\Enums\PosPermission;
+use App\Modules\Pos\Models\PosSession;
+use App\Modules\Pos\Models\PosTerminal;
 use App\Modules\Products\Enums\ProductPermission;
 use App\Modules\Products\Enums\ProductType;
 use App\Modules\Products\Models\Product;
@@ -10,8 +27,14 @@ use App\Modules\Products\Models\ProductVariant;
 use App\Modules\Products\Models\UnitOfMeasure;
 use App\Modules\Purchases\Enums\PurchasePermission;
 use App\Modules\Purchases\Models\SupplierProfile;
+use App\Modules\Sales\Enums\SalePermission;
 use App\Modules\Tenancy\Models\Company;
+use Brick\Math\BigDecimal;
+use Database\Seeders\Support\SimulatedSpedy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /*
@@ -127,4 +150,471 @@ function purchaseOrderData(SupplierProfile $supplier, array $items, array $overr
         'items' => $items,
         ...$overrides,
     ];
+}
+
+/**
+ * Autentica um membro com Vendas habilitado. Produtos (e, com ele, o estoque) só é habilitado quando pedido.
+ * Sem permissões informadas, é proprietário.
+ *
+ * @param  list<SalePermission|ProductPermission>|null  $permissions
+ */
+function actingAsSalesMember(Company $company, ?array $permissions = null, bool $withStock = false): User
+{
+    $user = User::factory()->create();
+    $user->companies()->attach($company, [
+        'role' => $permissions === null ? 'owner' : 'operator',
+        'is_active' => true,
+        'permissions' => array_column($permissions ?? [], 'value'),
+    ]);
+    $modules = [['sales', 'Vendas', SalePermission::catalog()], ...($withStock ? [['products', 'Produtos', ProductPermission::catalog()]] : [])];
+
+    foreach ($modules as [$identifier, $name, $catalog]) {
+        $module = PlatformModule::query()->firstOrCreate(['identifier' => $identifier], ['name' => $name, 'description' => $name, 'permissions' => $catalog]);
+        CompanyModule::query()->firstOrCreate(['company_id' => $company->id, 'platform_module_id' => $module->id], ['activated_by' => $user->id, 'activated_at' => now()]);
+    }
+
+    test()->actingAs($user)->withSession(['active_company_id' => $company->id]);
+
+    return $user;
+}
+
+/** Unidade comercializável com preço de venda e, quando informado, estoque inicial e custo médio. */
+function sellableVariant(Company $company, string $price = '10.00', ?string $stock = null, ?string $averageCost = null, bool $isService = false, bool $isFractional = false): ProductVariant
+{
+    $variant = purchasableVariant($company, isFractional: $isFractional, isService: $isService);
+    $variant->update(['sale_price' => $price, 'promotional_price' => null]);
+
+    if ($stock !== null) {
+        app(InventoryService::class)->recordEntry(new StockOperation(companyId: $company->id, variantId: $variant->id, quantity: $stock, entryValue: $averageCost === null ? null : (string) BigDecimal::of($averageCost)->multipliedBy($stock)->toScale(2)));
+    }
+
+    return $variant->refresh();
+}
+
+/**
+ * Dados de uma venda à vista, no formato da requisição.
+ *
+ * @param  list<array<string, mixed>>  $items
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function saleOrderData(?Party $customer, array $items, array $overrides = []): array
+{
+    return [
+        'customer_party_id' => $customer?->id,
+        'order_date' => now()->format('Y-m-d'),
+        'delivery_method' => 'pickup',
+        'discount' => '0',
+        'freight' => '0',
+        'other_costs' => '0',
+        'payment_condition' => 'undefined',
+        'installments' => [],
+        'items' => $items,
+        'idempotency_key' => (string) Str::uuid(),
+        ...$overrides,
+    ];
+}
+
+/** Pessoa com o papel cliente. */
+function saleCustomer(Company $company, array $attributes = []): Party
+{
+    $party = Party::factory()->create(['company_id' => $company->id, ...$attributes]);
+    $party->roles()->create(['company_id' => $company->id, 'role' => PartyRole::CUSTOMER]);
+
+    return $party;
+}
+
+/**
+ * Autentica um membro com o Financeiro habilitado e, quando pedidos, outros módulos (identificadores).
+ * Sem permissões informadas, é proprietário.
+ *
+ * @param  list<FinancePermission|SalePermission|PurchasePermission|ProductPermission>|null  $permissions
+ * @param  list<string>  $alsoEnable
+ */
+function actingAsFinanceMember(Company $company, ?array $permissions = null, array $alsoEnable = []): User
+{
+    $user = User::factory()->create();
+    $user->companies()->attach($company, [
+        'role' => $permissions === null ? 'owner' : 'operator',
+        'is_active' => true,
+        'permissions' => array_column($permissions ?? [], 'value'),
+    ]);
+    $catalogs = [
+        'finance' => ['Financeiro', FinancePermission::catalog(), []],
+        'sales' => ['Vendas', SalePermission::catalog(), []],
+        'products' => ['Produtos', ProductPermission::catalog(), []],
+        'purchases' => ['Compras', PurchasePermission::catalog(), ['products']],
+    ];
+
+    foreach (['finance', ...$alsoEnable] as $identifier) {
+        [$name, $catalog, $dependencies] = $catalogs[$identifier];
+        $module = PlatformModule::query()->firstOrCreate(['identifier' => $identifier], ['name' => $name, 'description' => $name, 'dependencies' => $dependencies, 'permissions' => $catalog]);
+        CompanyModule::query()->firstOrCreate(['company_id' => $company->id, 'platform_module_id' => $module->id], ['activated_by' => $user->id, 'activated_at' => now()]);
+    }
+
+    test()->actingAs($user)->withSession(['active_company_id' => $company->id]);
+
+    return $user;
+}
+
+/** Conta financeira ativa com saldo inicial. */
+function financeAccount(Company $company, string $openingBalance = '0.00', string $name = 'Caixa'): FinanceAccount
+{
+    return FinanceAccount::query()->create([
+        'company_id' => $company->id,
+        'name' => $name,
+        'type' => 'cash',
+        'opening_balance' => $openingBalance,
+        'opening_date' => now($company->timezone)->subMonth()->format('Y-m-d'),
+        'is_active' => true,
+    ]);
+}
+
+/**
+ * Dados de um título manual, no formato da requisição.
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function financeTitleData(string $kind = 'receivable', array $overrides = []): array
+{
+    return [
+        'kind' => $kind,
+        'description' => $kind === 'receivable' ? 'Serviço prestado' : 'Aluguel',
+        'amount' => '100.00',
+        'competence_date' => now()->format('Y-m-d'),
+        'due_date' => now()->addDays(5)->format('Y-m-d'),
+        'idempotency_key' => (string) Str::uuid(),
+        ...$overrides,
+    ];
+}
+
+/**
+ * Dados de uma baixa, no formato da requisição.
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function settlementData(FinanceAccount $account, string $principal, array $overrides = []): array
+{
+    return [
+        'finance_account_id' => $account->id,
+        'settled_at' => now()->format('Y-m-d'),
+        'method' => 'pix',
+        'principal' => $principal,
+        'interest' => '0',
+        'fine' => '0',
+        'discount' => '0',
+        'idempotency_key' => (string) Str::uuid(),
+        ...$overrides,
+    ];
+}
+
+/**
+ * Autentica um membro com o PDV habilitado e, quando pedidos, outros módulos (identificadores).
+ * Sem permissões informadas, é proprietário.
+ *
+ * @param  list<PosPermission|SalePermission|FinancePermission>|null  $permissions
+ * @param  list<string>  $alsoEnable
+ */
+function actingAsPosMember(Company $company, ?array $permissions = null, array $alsoEnable = [], ?User $user = null): User
+{
+    $user ??= User::factory()->create();
+    $user->companies()->syncWithoutDetaching([$company->id => [
+        'role' => $permissions === null ? 'owner' : 'operator',
+        'is_active' => true,
+        'permissions' => array_column($permissions ?? [], 'value'),
+    ]]);
+    $catalogs = [
+        'pos' => ['PDV', PosPermission::catalog(), []],
+        'finance' => ['Financeiro', FinancePermission::catalog(), []],
+        'sales' => ['Vendas', SalePermission::catalog(), []],
+        'products' => ['Produtos', ProductPermission::catalog(), []],
+    ];
+
+    foreach (['pos', ...$alsoEnable] as $identifier) {
+        [$name, $catalog, $dependencies] = $catalogs[$identifier];
+        $module = PlatformModule::query()->firstOrCreate(['identifier' => $identifier], ['name' => $name, 'description' => $name, 'dependencies' => $dependencies, 'permissions' => $catalog]);
+        CompanyModule::query()->firstOrCreate(['company_id' => $company->id, 'platform_module_id' => $module->id], ['activated_by' => $user->id, 'activated_at' => now()]);
+    }
+
+    test()->actingAs($user)->withSession(['active_company_id' => $company->id]);
+
+    return $user;
+}
+
+/** Terminal ativo e sessão aberta pelo usuário autenticado, com troco inicial. */
+function openPosSession(Company $company, string $openingAmount = '100.00', string $code = 'CX01'): PosSession
+{
+    $terminal = PosTerminal::query()->firstOrCreate(['company_id' => $company->id, 'code' => $code], ['name' => "Caixa {$code}", 'is_active' => true]);
+    test()->post("/pos/terminals/{$terminal->id}/open", ['opening_amount' => $openingAmount, 'idempotency_key' => (string) Str::uuid()])->assertSessionHasNoErrors();
+
+    return PosSession::query()->where('pos_terminal_id', $terminal->id)->where('status', 'open')->sole();
+}
+
+/**
+ * Dados de finalização no caixa.
+ *
+ * @param  list<array<string, mixed>>  $items
+ * @param  list<array<string, mixed>>  $payments
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function posCart(array $items, array $payments, array $overrides = []): array
+{
+    return ['items' => $items, 'payments' => $payments, 'idempotency_key' => (string) Str::uuid(), ...$overrides];
+}
+
+/**
+ * Autentica um membro com o módulo Estoque habilitado e, quando pedidos, outros módulos (identificadores).
+ * Sem permissões informadas, é proprietário.
+ *
+ * @param  list<InventoryPermission|PurchasePermission|SalePermission|PosPermission|ProductPermission>|null  $permissions
+ * @param  list<string>  $alsoEnable
+ */
+function actingAsInventoryMember(Company $company, ?array $permissions = null, array $alsoEnable = [], ?User $user = null): User
+{
+    $user ??= User::factory()->create();
+    $user->companies()->syncWithoutDetaching([$company->id => [
+        'role' => $permissions === null ? 'owner' : 'operator',
+        'is_active' => true,
+        'permissions' => array_column($permissions ?? [], 'value'),
+    ]]);
+    $catalogs = [
+        'inventory' => ['Estoque', InventoryPermission::catalog()],
+        'products' => ['Produtos', ProductPermission::catalog()],
+        'purchases' => ['Compras', PurchasePermission::catalog()],
+        'sales' => ['Vendas', SalePermission::catalog()],
+        'pos' => ['PDV', PosPermission::catalog()],
+        'finance' => ['Financeiro', FinancePermission::catalog()],
+    ];
+
+    foreach (['inventory', ...$alsoEnable] as $identifier) {
+        [$name, $catalog] = $catalogs[$identifier];
+        $module = PlatformModule::query()->firstOrCreate(['identifier' => $identifier], ['name' => $name, 'description' => $name, 'dependencies' => [], 'permissions' => $catalog]);
+        CompanyModule::query()->firstOrCreate(['company_id' => $company->id, 'platform_module_id' => $module->id], ['activated_by' => $user->id, 'activated_at' => now()]);
+    }
+
+    test()->actingAs($user)->withSession(['active_company_id' => $company->id]);
+
+    return $user;
+}
+
+/** Mercadoria com controle de estoque e, se informado, saldo inicial no depósito (o principal quando omitido). */
+function stockItem(Company $company, ?string $initial = null, ?int $warehouseId = null, bool $isFractional = false, string $minimum = '0'): ProductVariant
+{
+    $variant = purchasableVariant($company, '5.00', $isFractional);
+    $variant->update(['minimum_stock' => $minimum]);
+
+    if ($initial !== null) {
+        app(InventoryService::class)->recordInitial(new StockOperation($company->id, $variant->id, $initial, warehouseId: $warehouseId));
+    }
+
+    return $variant->fresh();
+}
+
+/**
+ * Autentica um membro com Pagamentos habilitado e, quando pedidos, outros módulos. Sem permissões, é proprietário.
+ *
+ * @param  list<BackedEnum>|null  $permissions
+ * @param  list<string>  $alsoEnable
+ */
+function actingAsPaymentsMember(Company $company, ?array $permissions = null, array $alsoEnable = [], ?User $user = null): User
+{
+    $user ??= User::factory()->create();
+    $user->companies()->syncWithoutDetaching([$company->id => [
+        'role' => $permissions === null ? 'owner' : 'operator',
+        'is_active' => true,
+        'permissions' => array_map(fn (BackedEnum $permission): string => (string) $permission->value, $permissions ?? []),
+    ]]);
+    $catalogs = [
+        'payments' => ['Pagamentos', PaymentPermission::catalog()],
+        'sales' => ['Vendas', SalePermission::catalog()],
+        'finance' => ['Financeiro', FinancePermission::catalog()],
+        'pos' => ['PDV', PosPermission::catalog()],
+        'products' => ['Produtos', ProductPermission::catalog()],
+    ];
+
+    foreach (['payments', ...$alsoEnable] as $identifier) {
+        [$name, $catalog] = $catalogs[$identifier];
+        $module = PlatformModule::query()->firstOrCreate(['identifier' => $identifier], ['name' => $name, 'description' => $name, 'dependencies' => [], 'permissions' => $catalog]);
+        CompanyModule::query()->firstOrCreate(['company_id' => $company->id, 'platform_module_id' => $module->id], ['activated_by' => $user->id, 'activated_at' => now()]);
+    }
+
+    test()->actingAs($user)->withSession(['active_company_id' => $company->id]);
+
+    return $user;
+}
+
+/** Conta Efí ativa (homologação) com credenciais fictícias e o provedor disponível na plataforma. */
+function efiAccount(Company $company, ?int $financeAccountId = null): PaymentProviderAccount
+{
+    PaymentProviderAvailability::query()->updateOrCreate(['identifier' => 'efi'], ['name' => 'Efí', 'is_available' => true]);
+    $token = Str::random(48);
+
+    return PaymentProviderAccount::create([
+        'company_id' => $company->id,
+        'provider' => 'efi',
+        'environment' => 'homologation',
+        'name' => 'Efí — Homologação',
+        'credentials' => ['client_id' => 'Client_Id_teste', 'client_secret' => 'Client_Secret_muito_secreto', 'certificate' => base64_encode("-----BEGIN CERTIFICATE-----\nteste\n-----END CERTIFICATE-----\n")],
+        'pix_key' => 'chave-pix-teste@example.com',
+        'methods' => ['pix'],
+        'expiration_seconds' => 3600,
+        'webhook_token' => $token,
+        'webhook_token_hash' => hash('sha256', $token),
+        'status' => AccountStatus::Active,
+        'finance_account_id' => $financeAccountId,
+    ]);
+}
+
+/**
+ * Simula a API Pix da Efí. `$state` controla a consulta da cobrança: `pix` (pagamentos recebidos), `status` e
+ * `devolucoes` por endToEndId. Nenhuma chamada sai do processo de teste.
+ *
+ * @param  array<string, mixed>  $state
+ */
+function fakeEfi(array &$state): void
+{
+    Http::preventStrayRequests();
+    Http::fake(function (Request $request) use (&$state) {
+        $path = parse_url($request->url(), PHP_URL_PATH);
+        $state['calls'][] = $request->method().' '.$path;
+
+        if ($path === '/oauth/token') {
+            return Http::response(['access_token' => 'token-teste', 'token_type' => 'Bearer', 'expires_in' => 3600]);
+        }
+
+        if (preg_match('#^/v2/cob/([A-Za-z0-9]+)$#', (string) $path, $match)) {
+            $state['txid'] = $match[1];
+
+            if ($request->method() === 'PATCH') {
+                $state['status'] = 'REMOVIDA_PELO_USUARIO_RECEBEDOR';
+            }
+
+            $pix = array_map(fn (array $pix): array => [...$pix, 'txid' => $match[1], 'devolucoes' => $state['devolucoes'][$pix['endToEndId']] ?? []], $state['pix'] ?? []);
+
+            return Http::response(array_filter(['txid' => $match[1], 'status' => $state['status'] ?? 'ATIVA', 'loc' => ['id' => 77], 'pixCopiaECola' => '00020101021226830014BR.GOV.BCB.PIX', 'valor' => ['original' => $state['amount'] ?? '10.00'], 'pix' => $pix === [] ? null : $pix]), $request->method() === 'PUT' ? 201 : 200);
+        }
+
+        if ($path === '/v2/cob') {
+            return Http::response(['cobs' => []]);
+        }
+
+        if (preg_match('#^/v2/loc/\d+/qrcode$#', (string) $path)) {
+            return Http::response(['qrcode' => '00020101021226830014BR.GOV.BCB.PIX', 'imagemQrcode' => 'data:image/svg+xml;base64,PHN2Zy8+', 'linkVisualizacao' => 'https://pix.example.com/v2/visualizacao']);
+        }
+
+        if (preg_match('#^/v2/pix/([^/]+)/devolucao/([^/]+)$#', (string) $path, $match)) {
+            $state['refund_requests'][] = $match[2];
+
+            return Http::response(['id' => $match[2], 'rtrId' => 'D'.$match[2], 'valor' => $request->data()['valor'] ?? '0', 'status' => 'EM_PROCESSAMENTO'], 201);
+        }
+
+        if (str_starts_with((string) $path, '/v2/webhook/')) {
+            $state['webhook_headers'] = $request->header('x-skip-mtls-checking');
+
+            return Http::response(['webhookUrl' => $request->data()['webhookUrl'] ?? null], 201);
+        }
+
+        return Http::response(['nome' => 'nao_encontrado', 'mensagem' => 'Rota não simulada.'], 404);
+    });
+}
+
+/** Notificação Pix da Efí para a conta (token da URL), como enviada pelo provedor. */
+function efiWebhook(PaymentProviderAccount $account, array $payload)
+{
+    return test()->postJson("/webhooks/payments/efi/{$account->webhook_token}/pix", $payload);
+}
+
+/**
+ * Membro da empresa com o módulo Documentos Fiscais (e, opcionalmente, outros) habilitado. Sem `$permissions`, entra
+ * como proprietário; com a lista, como operador com exatamente essas permissões.
+ *
+ * @param  list<BackedEnum>|null  $permissions
+ * @param  list<string>  $alsoEnable
+ */
+function actingAsFiscalMember(Company $company, ?array $permissions = null, array $alsoEnable = [], ?User $user = null): User
+{
+    $user ??= User::factory()->create();
+    $user->companies()->syncWithoutDetaching([$company->id => [
+        'role' => $permissions === null ? 'owner' : 'operator',
+        'is_active' => true,
+        'permissions' => array_map(fn (BackedEnum $permission): string => (string) $permission->value, $permissions ?? []),
+    ]]);
+    $catalogs = [
+        'fiscal' => ['Documentos Fiscais', FiscalPermission::catalog()],
+        'sales' => ['Vendas', SalePermission::catalog()],
+        'finance' => ['Financeiro', FinancePermission::catalog()],
+        'pos' => ['PDV', PosPermission::catalog()],
+        'products' => ['Produtos', ProductPermission::catalog()],
+    ];
+
+    foreach (['fiscal', ...$alsoEnable] as $identifier) {
+        [$name, $catalog] = $catalogs[$identifier];
+        $module = PlatformModule::query()->firstOrCreate(['identifier' => $identifier], ['name' => $name, 'description' => $name, 'dependencies' => [], 'permissions' => $catalog]);
+        CompanyModule::query()->firstOrCreate(['company_id' => $company->id, 'platform_module_id' => $module->id], ['activated_by' => $user->id, 'activated_at' => now()]);
+    }
+
+    test()->actingAs($user)->withSession(['active_company_id' => $company->id]);
+
+    return $user;
+}
+
+/**
+ * Spedy disponível na plataforma (sandbox, chave fictícia) e empresa pronta para emitir em homologação: cadastrada como
+ * emissora, certificado vigente, padrões confirmados. A API é simulada; nenhuma requisição sai do processo.
+ */
+function fiscalReady(Company $company, array $overrides = []): SimulatedSpedy
+{
+    FiscalProviderAvailability::query()->updateOrCreate(['identifier' => 'spedy'], [
+        'name' => 'Spedy', 'is_available' => true, 'document_types' => ['nfse', 'nfe', 'nfce'], 'environment' => 'sandbox',
+        'platform_credentials' => ['owner_api_key' => 'chave-titular-teste', 'webhook_secret' => 'whsec_'.base64_encode('segredo-simulado-de-webhook-32b!')],
+    ]);
+    FiscalSetting::query()->updateOrCreate(['company_id' => $company->id], [
+        'legal_name' => 'Empresa Teste LTDA', 'trade_name' => 'Empresa Teste', 'cnpj' => '11222333000181',
+        'address' => ['street' => 'Rua Teste', 'number' => '10', 'district' => 'Centro', 'postal_code' => '01001000', 'city' => 'São Paulo', 'state' => 'SP'],
+        'city_code' => '3550308', 'tax_regime' => 'simplesNacional', 'provider' => 'spedy', 'environment' => 'homologation',
+        'enabled_types' => ['nfse', 'nfe', 'nfce'], 'series' => ['nfse' => '1', 'nfe' => '1', 'nfce' => '1'],
+        'provider_company_id' => 'empresa-simulada', 'provider_credentials' => ['api_key' => 'chave-empresa-teste'], 'provider_environment' => 'sandbox',
+        'registration_status' => FiscalSetting::REGISTRATION_REGISTERED, 'registered_at' => now(), 'certificate_expires_at' => now()->addYear(),
+        'nfse' => ['service_code' => '01.07', 'iss_rate' => '2', 'taxation_type' => 'taxationInMunicipality'],
+        'product_defaults' => ['unit' => 'UN', 'origin' => '0', 'cfop' => '5102', 'icms_situation' => '102', 'pis_situation' => '49', 'cofins_situation' => '49'],
+        'nfce_csc_id' => '1', 'nfce_csc' => 'csc-teste',
+        'tax_settings_confirmed_at' => now(), 'tax_settings_confirmed_by' => 'Contador Teste',
+        ...$overrides,
+    ]);
+    $spedy = new SimulatedSpedy;
+    $spedy->issuerCnpj = '11222333000181';
+
+    return $spedy->start();
+}
+
+/** Dados de uma NFS-e avulsa válida para o tomador fictício. */
+function nfseDraftData(array $overrides = []): array
+{
+    return [
+        'type' => 'nfse',
+        'receiver' => ['name' => 'Cliente Tomador', 'document' => '529.982.247-25'],
+        'items' => [['description' => 'Consultoria em processos', 'quantity' => '1', 'unit_price' => '500.00']],
+        'description' => 'Consultoria em processos — novembro',
+        'idempotency_key' => (string) Str::uuid(),
+        ...$overrides,
+    ];
+}
+
+/** Assina o corpo como a Spedy (Standard Webhooks) com o segredo simulado. */
+function spedyWebhook(array $payload, ?string $secret = null, ?int $timestamp = null, string $id = 'msg_teste_1')
+{
+    $body = (string) json_encode($payload);
+    $timestamp ??= time();
+    $key = base64_decode(substr($secret ?? 'whsec_'.base64_encode('segredo-simulado-de-webhook-32b!'), 6));
+    $signature = base64_encode(hash_hmac('sha256', "{$id}.{$timestamp}.{$body}", $key, true));
+
+    return test()->call('POST', '/webhooks/fiscal/spedy', [], [], [], [
+        'CONTENT_TYPE' => 'application/json',
+        'HTTP_WEBHOOK_ID' => $id,
+        'HTTP_WEBHOOK_TIMESTAMP' => (string) $timestamp,
+        'HTTP_WEBHOOK_SIGNATURE' => "v1,{$signature}",
+    ], $body);
 }

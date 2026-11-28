@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Purchases;
 
-use App\Modules\Purchases\Enums\PaymentCondition;
-use App\Modules\Purchases\Enums\PaymentMethod;
+use App\Modules\Core\Commerce\PaymentCondition;
+use App\Modules\Core\Commerce\PaymentMethod;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;

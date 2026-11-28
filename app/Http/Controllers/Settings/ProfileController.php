@@ -9,6 +9,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -49,6 +50,14 @@ class ProfileController extends Controller
     public function destroy(ProfileDeleteRequest $request): RedirectResponse
     {
         $user = $request->user();
+
+        // Uma empresa não pode ficar sem responsável: o único proprietário transfere a propriedade antes de sair.
+        $orphaned = $user->companies()->wherePivot('role', 'owner')->wherePivot('is_active', true)->get()
+            ->filter(fn ($company): bool => $company->users()->wherePivot('role', 'owner')->wherePivot('is_active', true)->count() === 1);
+
+        if ($orphaned->isNotEmpty()) {
+            throw ValidationException::withMessages(['password' => 'Você é o único proprietário de '.$orphaned->pluck('name')->implode(', ').'. Defina outro proprietário em Usuários e permissões antes de excluir a conta.']);
+        }
 
         Auth::logout();
 

@@ -6,7 +6,8 @@ import FormField from '@/components/form-field';
 import InputError from '@/components/input-error';
 import NativeSelect from '@/components/native-select';
 import NativeTextarea from '@/components/native-textarea';
-import RemoteLookup from '@/components/purchases/remote-lookup';
+import QuickPurchaseItemDialog from '@/components/purchases/quick-item-dialog';
+import RemoteLookup from '@/components/remote-lookup';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { formatMoney, parseDecimal, toDecimalInput } from '@/lib/decimal';
@@ -295,9 +296,12 @@ export default function OrderEditor({
                 className="space-y-3 rounded-lg border p-4"
                 aria-labelledby="items-heading"
             >
-                <h3 id="items-heading" className="font-medium">
-                    Itens
-                </h3>
+                <div className="flex items-center justify-between gap-2">
+                    <h3 id="items-heading" className="font-medium">
+                        Itens
+                    </h3>
+                    <QuickPurchaseItemDialog onCreated={addItem} />
+                </div>
                 <RemoteLookup<PurchasableItem>
                     id="item-lookup"
                     placeholder="Nome, SKU, código de barras ou código do fornecedor"

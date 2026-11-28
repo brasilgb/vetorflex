@@ -16,7 +16,7 @@ class ActiveCompanyController extends Controller
     {
         $validated = $request->validate(['company_id' => ['required', 'integer']]);
 
-        abort_unless($tenantContext->authorizedCompany($request->user(), $validated['company_id']), 404);
+        abort_unless($tenantContext->authorizedCompany($request->user(), $validated['company_id']) !== null, 404);
 
         $request->session()->put(TenantContext::SESSION_KEY, $validated['company_id']);
 

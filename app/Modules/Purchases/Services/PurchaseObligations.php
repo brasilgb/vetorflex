@@ -10,6 +10,7 @@ use App\Modules\Purchases\Models\PurchaseOrder;
 use App\Modules\Purchases\Models\PurchasePaymentSchedule;
 use App\Modules\Purchases\Models\PurchaseReceipt;
 use App\Modules\Purchases\Support\PurchaseMath;
+use App\Modules\Tenancy\Models\Company;
 
 class PurchaseObligations implements PurchaseObligationSource
 {
@@ -40,6 +41,16 @@ class PurchaseObligations implements PurchaseObligationSource
             ])->all()),
             origin: 'purchase_order',
             idempotencyKey: "purchase-order:{$order->id}",
+            isBalanceClosed: $order->balance_closed_at !== null,
+            orderDate: $order->order_date->format('Y-m-d'),
+            supplierName: $order->supplier_snapshot['name'] ?? null,
         );
+    }
+
+    public function obligationsBetween(Company $company, string $from, string $until): array
+    {
+        return array_values(PurchaseOrder::query()->where('company_id', $company->id)->whereNotNull('confirmed_at')
+            ->whereBetween('order_date', [$from, $until])->with('supplier')->orderBy('order_date')->orderBy('id')->get()
+            ->map(fn (PurchaseOrder $order): ?PurchaseObligation => $this->obligationFor($order))->filter()->all());
     }
 }

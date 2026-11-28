@@ -8,6 +8,7 @@ use Illuminate\Validation\Validator;
 
 class UpdateCustomerRequest extends StoreCustomerRequest
 {
+    /** @return list<callable(Validator): void> */
     public function after(): array
     {
         return [function (Validator $validator): void {

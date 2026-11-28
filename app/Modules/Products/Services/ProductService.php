@@ -23,7 +23,7 @@ class ProductService
 {
     private const PRODUCT_FIELDS = ['name', 'short_description', 'description', 'internal_code', 'product_category_id', 'product_brand_id', 'unit_of_measure_id', 'manufacturer_reference', 'tracks_inventory', 'ncm', 'cest', 'merchandise_origin', 'notes'];
 
-    private const VARIANT_FIELDS = ['sku', 'barcode', 'barcode_type', 'cost_price', 'sale_price', 'promotional_price', 'minimum_stock', 'weight', 'height', 'width', 'length'];
+    private const VARIANT_FIELDS = ['sku', 'barcode', 'barcode_type', 'cost_price', 'sale_price', 'promotional_price', 'minimum_stock', 'maximum_stock', 'weight', 'height', 'width', 'length'];
 
     public function __construct(
         private AuditService $audit,

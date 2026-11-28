@@ -2,8 +2,8 @@
 
 namespace App\Modules\Purchases\Models;
 
-use App\Modules\Purchases\Enums\PaymentCondition;
-use App\Modules\Purchases\Enums\PaymentMethod;
+use App\Modules\Core\Commerce\PaymentCondition;
+use App\Modules\Core\Commerce\PaymentMethod;
 use App\Modules\Purchases\Enums\PurchaseOrderStatus;
 use App\Modules\Tenancy\Models\Company;
 use Carbon\CarbonImmutable;

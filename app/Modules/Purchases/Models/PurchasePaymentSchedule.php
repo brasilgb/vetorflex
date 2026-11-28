@@ -2,7 +2,7 @@
 
 namespace App\Modules\Purchases\Models;
 
-use App\Modules\Purchases\Enums\PaymentMethod;
+use App\Modules\Core\Commerce\PaymentMethod;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 

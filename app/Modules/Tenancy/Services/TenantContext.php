@@ -105,7 +105,7 @@ class TenantContext
             ->all();
 
         return $membership->isOwner()
-            ? $available
+            ? array_values($available)
             : array_values(array_intersect($available, $membership->permissions ?? []));
     }
 

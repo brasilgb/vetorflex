@@ -44,3 +44,10 @@ yarn-error.log
 /opencode.json
 /opencode.jsonc
 /.git-local
+
+# Comunicação interna entre etapas e relatórios de execução (não versionar).
+/correio.md
+/executed.md
+# Gerenciador oficial: npm (package-lock.json).
+/pnpm-lock.yaml
+/yarn.lock

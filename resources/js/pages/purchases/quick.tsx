@@ -10,7 +10,7 @@ import OrderEditor, {
     serializeOrder,
 } from '@/components/purchases/order-editor';
 import type { OrderFormData } from '@/components/purchases/order-editor';
-import RemoteLookup from '@/components/purchases/remote-lookup';
+import RemoteLookup from '@/components/remote-lookup';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { uuid } from '@/lib/uuid';

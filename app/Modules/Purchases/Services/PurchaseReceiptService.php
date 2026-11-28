@@ -8,13 +8,16 @@ use App\Modules\Core\Services\SequenceService;
 use App\Modules\Inventory\Data\StockOperation;
 use App\Modules\Inventory\Enums\MovementOrigin;
 use App\Modules\Inventory\Services\InventoryService;
+use App\Modules\Inventory\Services\StockModule;
 use App\Modules\Purchases\Enums\PurchaseOrderStatus;
 use App\Modules\Purchases\Enums\ReceiptStatus;
+use App\Modules\Purchases\Events\PurchaseReceiptReversed;
 use App\Modules\Purchases\Models\PurchaseOrder;
 use App\Modules\Purchases\Models\PurchaseOrderItem;
 use App\Modules\Purchases\Models\PurchaseReceipt;
 use App\Modules\Purchases\Models\PurchaseReceiptItem;
 use App\Modules\Purchases\Support\PurchaseMath;
+use App\Modules\Tenancy\Models\Company;
 use Brick\Math\BigDecimal;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -37,6 +40,7 @@ class PurchaseReceiptService
         private SequenceService $sequences,
         private SupplierProductService $supplierProducts,
         private AuditService $audit,
+        private StockModule $stock,
     ) {}
 
     /**
@@ -91,6 +95,7 @@ class PurchaseReceiptService
             }
 
             $this->audit->record('purchase.receipt_reversed', $order->company, $user, $receipt, ['number' => $receipt->number, 'reason' => $reason]);
+            PurchaseReceiptReversed::dispatch($order);
 
             return $receipt;
         }, self::TRANSACTION_ATTEMPTS);
@@ -161,7 +166,8 @@ class PurchaseReceiptService
             'divergence' => $divergence,
         ]);
 
-        if ($orderItem->variant->product->controlsStock()) {
+        // Sem controle de estoque (Estoque ou Produtos), o recebimento registra o documento e o custo de aquisição, sem saldo.
+        if ($orderItem->variant->product->controlsStock() && $this->stock->isEnabled(Company::query()->findOrFail($receipt->company_id))) {
             $movement = $this->inventory->recordEntry(new StockOperation(
                 companyId: $receipt->company_id,
                 variantId: $orderItem->product_variant_id,

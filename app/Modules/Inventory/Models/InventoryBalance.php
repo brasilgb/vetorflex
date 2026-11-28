@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $product_variant_id
  * @property string $quantity
  * @property string|null $average_cost Custo médio ponderado móvel; nulo até o primeiro recebimento com valor.
+ * @property string $reserved_quantity Soma das reservas ativas, gravada por InventoryReservationService.
  */
 class InventoryBalance extends Model
 {
@@ -19,6 +20,6 @@ class InventoryBalance extends Model
 
     protected function casts(): array
     {
-        return ['quantity' => 'decimal:4', 'average_cost' => 'decimal:6'];
+        return ['quantity' => 'decimal:4', 'reserved_quantity' => 'decimal:4', 'average_cost' => 'decimal:6'];
     }
 }

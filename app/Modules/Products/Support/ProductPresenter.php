@@ -82,7 +82,7 @@ class ProductPresenter
             'sku' => $movement->variant->sku,
             'unit' => $movement->variant->product->unit->code,
             'is_reversed' => $movement->reversal !== null,
-            'is_reversible' => $movement->type !== MovementType::Reversal && $movement->reversal === null && $movement->origin !== MovementOrigin::Purchase,
+            'is_reversible' => ! in_array($movement->type, [MovementType::Reversal, MovementType::TransferOut, MovementType::TransferIn], true) && $movement->reversal === null && $movement->origin !== MovementOrigin::Purchase,
         ];
     }
 }

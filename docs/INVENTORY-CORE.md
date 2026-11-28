@@ -1,6 +1,6 @@
 # Núcleo interno de estoque
 
-Mecanismo compartilhado por Produtos, Compras e pelas futuras Vendas. O estoque avançado será um módulo comercial à parte.
+Mecanismo compartilhado por Produtos, Compras, Vendas, PDV e Estoque. O módulo comercial Estoque (`STOCK.md`) é a interface sobre este núcleo.
 
 ## Regras
 
@@ -13,26 +13,30 @@ Mecanismo compartilhado por Produtos, Compras e pelas futuras Vendas. O estoque 
 
 ## Operações
 
-| Operação | Método |
-|---|---|
+| Operação        | Método                                                  |
+| --------------- | ------------------------------------------------------- |
 | Estoque inicial | `recordInitial`, somente antes da primeira movimentação |
-| Entrada e saída | `recordEntry`, `recordExit` |
-| Ajuste | `adjustTo`, recebe o saldo contado e grava a diferença |
-| Estorno | `reverse` |
-| Consulta | `balanceOf`, `balancesOf`, `averageCostOf` |
+| Entrada e saída | `recordEntry`, `recordExit`                             |
+| Ajuste          | `adjustTo`, recebe o saldo contado e grava a diferença  |
+| Estorno         | `reverse`                                               |
+| Consulta        | `balanceOf`, `balancesOf`, `averageCostOf`              |
 
 `StockOperation` leva empresa, unidade comercializável, quantidade, origem, referência, usuário, motivo, chave de idempotência, custo unitário e, nas entradas de compra, o valor total da aquisição (`entryValue`), que alimenta o custo médio (`INVENTORY-COSTING.md`). Movimentações de origem `purchase` só são corrigidas em Compras.
 
+## Depósitos (OMNICHANNEL-08)
+
+Cada movimentação pertence a um depósito (`StockOperation::warehouseId`; sem ele, o principal da empresa). `InventoryService` grava `inventory_balances` (total da empresa) e `inventory_warehouse_balances` (por depósito) sob a mesma trava; a soma dos depósitos é sempre o total. O ajuste define o saldo do depósito. `transfer()` registra `transfer_out` e `transfer_in` por item numa transação, sem alterar total nem custo médio. Reservas e custo médio continuam por empresa. Detalhes em `STOCK.md`.
+
 ## Estoque negativo
 
-Sempre recusado. Para torná-lo configurável: ler a opção de `companies.settings` dentro de `InventoryService::recordLocked`, já sob bloqueio, mantendo a recusa como padrão. Nenhum outro ponto deve decidir sobre isso.
+Recusado por padrão. A opção `companies.settings['inventory']['allow_negative']` é lida dentro de `InventoryService::recordLocked`, já sob bloqueio (`StockModule::allowsNegative`); nenhum outro ponto decide sobre isso. Transferências nunca deixam o depósito de origem negativo.
 
 ## Extensões previstas (não implementadas)
 
-| Necessidade | Onde estender |
-|---|---|
-| Reserva | Nova tabela, sob o mesmo bloqueio; disponível = saldo − reservas |
-| Sincronização com canais | Evento emitido após o commit de `InventoryService::record` |
+| Necessidade              | Onde estender                                                |
+| ------------------------ | ------------------------------------------------------------ |
+| Reserva                  | Implementada (`InventoryReservationService`, OMNICHANNEL-05) |
+| Sincronização com canais | Evento emitido após o commit de `InventoryService::record`   |
 
 ## Verificação de concorrência
 
@@ -43,3 +47,7 @@ Em 26/11/2026, em MariaDB 11.8 local (banco temporário), pelos serviços de Com
 ## Limitação
 
 A imutabilidade é garantida no model, não no banco: SQL direto ainda conseguiria alterar o histórico.
+
+## Reservas
+
+`InventoryReservationService::reserve(empresa, unidade, tipo, referência, quantidade)` define a quantidade reservada por um documento (semântica de "definir", idempotente) e mantém `inventory_balances.reserved_quantity`. Bloqueia a unidade comercializável e o saldo, como `InventoryService`, e exige transação aberta. Só reserva o disponível (saldo − reservas de outros documentos). `availabilityOf` devolve saldo, reservado e disponível. Saídas de `InventoryService` não podem consumir o reservado para outros documentos; quem reservou reduz a reserva antes da saída. Usado por Vendas (`sale_order_item`) e disponível para PDV e lojas virtuais.

@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Purchases;
 
 use App\Http\Requests\Purchases\StoreQuickPurchaseRequest;
-use App\Modules\Purchases\Enums\PaymentCondition;
-use App\Modules\Purchases\Enums\PaymentMethod;
+use App\Modules\Core\Commerce\PaymentCondition;
+use App\Modules\Core\Commerce\PaymentMethod;
 use App\Modules\Purchases\Services\QuickPurchaseService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;

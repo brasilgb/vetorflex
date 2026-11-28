@@ -11,10 +11,10 @@ Entrega: módulo Produtos 1.0.0 (`PRODUCTS.md`), núcleo de movimentação de me
 
 ## Pendências registradas
 
-| Pendência | Impacto |
-|---|---|
+| Pendência                                                           | Impacto                                                                                        |
+| ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | Interações no navegador não foram testadas (sem Chrome no ambiente) | Diálogos, upload, abas e leitor de código precisam de homologação manual, inclusive em celular |
-| Não havia tela para conceder permissões individuais | Resolvida na OMNICHANNEL-04 (`/company/members`) |
-| Importação síncrona, limitada a 500 registros | Volumes maiores exigem fila e worker |
-| Imutabilidade das movimentações só no model | Ver `INVENTORY-CORE.md` |
-| Demais pendências da OMNICHANNEL-02 | Ver `OMNICHANNEL-02.md` |
+| Não havia tela para conceder permissões individuais                 | Resolvida na OMNICHANNEL-04 (`/company/members`)                                               |
+| Importação síncrona, limitada a 500 registros                       | Volumes maiores exigem fila e worker                                                           |
+| Imutabilidade das movimentações só no model                         | Ver `INVENTORY-CORE.md`                                                                        |
+| Demais pendências da OMNICHANNEL-02                                 | Ver `OMNICHANNEL-02.md`                                                                        |

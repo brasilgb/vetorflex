@@ -9,6 +9,8 @@ enum MovementType: string
     case Exit = 'exit';
     case Adjustment = 'adjustment';
     case Reversal = 'reversal';
+    case TransferOut = 'transfer_out';
+    case TransferIn = 'transfer_in';
 
     public function label(): string
     {
@@ -18,6 +20,8 @@ enum MovementType: string
             self::Exit => 'Saída',
             self::Adjustment => 'Ajuste',
             self::Reversal => 'Estorno',
+            self::TransferOut => 'Transferência (saída)',
+            self::TransferIn => 'Transferência (entrada)',
         };
     }
 

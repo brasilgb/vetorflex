@@ -19,6 +19,12 @@ class DatabaseSeeder extends Seeder
             CustomerDemoSeeder::class,
             ProductDemoSeeder::class,
             PurchaseDemoSeeder::class,
+            SalesDemoSeeder::class,
+            FinanceDemoSeeder::class,
+            PosDemoSeeder::class,
+            StockDemoSeeder::class,
+            PaymentsDemoSeeder::class,
+            FiscalDemoSeeder::class,
         ]);
     }
 }

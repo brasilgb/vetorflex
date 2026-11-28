@@ -143,8 +143,9 @@ return [
     */
 
     'features' => [
-        Features::registration(),
+        // O cadastro é a jornada comercial própria (`/cadastro`, SignupController), que provisiona a empresa.
         Features::resetPasswords(),
+        Features::emailVerification(),
     ],
 
 ];

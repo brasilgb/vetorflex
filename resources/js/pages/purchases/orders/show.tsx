@@ -2,7 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import ConfirmButton from '@/components/confirm-button';
 import Heading from '@/components/heading';
-import ReasonDialog from '@/components/purchases/reason-dialog';
+import ReasonDialog from '@/components/reason-dialog';
 import ReceiveDialog from '@/components/purchases/receive-dialog';
 import ReturnDialog from '@/components/purchases/return-dialog';
 import StatusBadge from '@/components/purchases/status-badge';

@@ -11,6 +11,7 @@ enum MovementOrigin: string
     case Product = 'product';
     case Purchase = 'purchase';
     case Sale = 'sale';
+    case Count = 'count';
 
     public function label(): string
     {
@@ -19,6 +20,7 @@ enum MovementOrigin: string
             self::Product => 'Cadastro de produto',
             self::Purchase => 'Compra',
             self::Sale => 'Venda',
+            self::Count => 'Inventário',
         };
     }
 }

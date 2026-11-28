@@ -1,11 +1,18 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import {
+    Blocks,
+    FileText,
     KeyRound,
     LayoutGrid,
     Package,
+    Store,
+    Receipt,
+    Warehouse,
+    QrCode,
     ShieldCheck,
     ShoppingCart,
     UsersRound,
+    Wallet,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
@@ -21,11 +28,59 @@ import {
 } from '@/components/ui/sidebar';
 import { useTenant } from '@/hooks/use-tenant';
 import { dashboard } from '@/routes';
+import {
+    cashFlow,
+    dashboard as finance,
+    settings as financeSettings,
+} from '@/routes/finance';
+import { index as financeAccounts } from '@/routes/finance/accounts';
+import { index as financeMovements } from '@/routes/finance/movements';
+import { index as reconciliation } from '@/routes/finance/reconciliation';
+import { index as recurrences } from '@/routes/finance/recurrences';
+import { index as financeReports } from '@/routes/finance/reports';
+import { index as financeTitles } from '@/routes/finance/titles';
+import { index as financeTransfers } from '@/routes/finance/transfers';
+import {
+    dashboard as fiscalDashboard,
+    settings as fiscalSettings,
+} from '@/routes/fiscal';
+import {
+    create as createFiscalDocument,
+    index as fiscalDocuments,
+} from '@/routes/fiscal/documents';
+import { index as fiscalItems } from '@/routes/fiscal/items';
+import { index as fiscalReports } from '@/routes/fiscal/reports';
+import {
+    dashboard as inventoryDashboard,
+    settings as inventorySettings,
+} from '@/routes/inventory';
+import { index as inventoryCounts } from '@/routes/inventory/counts';
+import { index as inventoryItems } from '@/routes/inventory/items';
+import { index as inventoryMovements } from '@/routes/inventory/movements';
+import { index as inventoryReports } from '@/routes/inventory/reports';
+import { index as inventoryTransfers } from '@/routes/inventory/transfers';
+import { index as inventoryWarehouses } from '@/routes/inventory/warehouses';
+import {
+    dashboard as paymentsDashboard,
+    settings as paymentSettings,
+} from '@/routes/payments';
+import {
+    create as createPaymentCharge,
+    index as paymentCharges,
+} from '@/routes/payments/charges';
+import { index as paymentReconciliation } from '@/routes/payments/reconciliation';
+import { index as paymentReports } from '@/routes/payments/reports';
+import { home as posHome, settings as posSettings } from '@/routes/pos';
+import { index as posReports } from '@/routes/pos/reports';
+import { index as posSales } from '@/routes/pos/sales';
+import { index as posSessions } from '@/routes/pos/sessions';
+import { index as posTerminals } from '@/routes/pos/terminals';
 import { index as products } from '@/routes/products';
 import { index as brands } from '@/routes/products/brands';
 import { index as categories } from '@/routes/products/categories';
 import { index as movements } from '@/routes/products/movements';
 import { index as units } from '@/routes/products/units';
+import { index as companyApplications } from '@/routes/company/applications';
 import { index as members } from '@/routes/company/members';
 import { dashboard as purchases } from '@/routes/purchases';
 import { index as purchaseOrders } from '@/routes/purchases/orders';
@@ -33,15 +88,33 @@ import { create as quickPurchase } from '@/routes/purchases/quick';
 import { index as receipts } from '@/routes/purchases/receipts';
 import { index as purchaseReturns } from '@/routes/purchases/returns';
 import { index as suppliers } from '@/routes/purchases/suppliers';
+import { dashboard as sales, settings as salesSettings } from '@/routes/sales';
+import { index as fulfillments } from '@/routes/sales/fulfillments';
+import {
+    create as createSale,
+    index as saleOrders,
+} from '@/routes/sales/orders';
+import { create as createQuote, index as quotes } from '@/routes/sales/quotes';
+import { index as saleReturns } from '@/routes/sales/returns';
+import {
+    home as rootAdminHome,
+    settings as platformSettings,
+} from '@/routes/root-admin';
+import { index as administrators } from '@/routes/root-admin/administrators';
+import { index as auditLogs } from '@/routes/root-admin/audit';
+import { index as contacts } from '@/routes/root-admin/contacts';
+import { index as rootAdminFiscal } from '@/routes/root-admin/fiscal';
+import { index as rootAdminPayments } from '@/routes/root-admin/payments';
 import { index as companies } from '@/routes/root-admin/companies';
 import { index as modules } from '@/routes/root-admin/modules';
+import { index as platformUsers } from '@/routes/root-admin/users';
 import type { Auth, NavItem } from '@/types';
 
 export function AppSidebar() {
     const tenant = useTenant();
     const { auth } = usePage<{ auth: Auth }>().props;
     const mainNavItems: NavItem[] = [
-        { title: 'Dashboard', href: dashboard(), icon: LayoutGrid },
+        { title: 'Painel', href: dashboard(), icon: LayoutGrid },
         ...(tenant.hasModule('customers')
             ? [{ title: 'Clientes', href: '/customers', icon: UsersRound }]
             : []),
@@ -93,6 +166,307 @@ export function AppSidebar() {
                   },
               ]
             : []),
+        ...(tenant.can('sales.view')
+            ? [
+                  {
+                      title: 'Vendas',
+                      href: sales(),
+                      icon: Receipt,
+                      items: [
+                          { title: 'Visão geral', href: sales() },
+                          { title: 'Orçamentos', href: quotes() },
+                          ...(tenant.can('sales.manage_quotes')
+                              ? [
+                                    {
+                                        title: 'Novo orçamento',
+                                        href: createQuote(),
+                                    },
+                                ]
+                              : []),
+                          { title: 'Pedidos', href: saleOrders() },
+                          ...(tenant.can('sales.create')
+                              ? [
+                                    {
+                                        title: 'Nova venda',
+                                        href: createSale({
+                                            query: { quick: 1 },
+                                        }),
+                                    },
+                                ]
+                              : []),
+                          { title: 'Atendimentos', href: fulfillments() },
+                          { title: 'Devoluções', href: saleReturns() },
+                          ...(tenant.can('sales.manage_settings')
+                              ? [
+                                    {
+                                        title: 'Configurações',
+                                        href: salesSettings(),
+                                    },
+                                ]
+                              : []),
+                      ],
+                  },
+              ]
+            : []),
+        ...(tenant.can('inventory.view')
+            ? [
+                  {
+                      title: 'Estoque',
+                      href: inventoryDashboard(),
+                      icon: Warehouse,
+                      items: [
+                          {
+                              permission: 'inventory.view',
+                              title: 'Visão geral',
+                              href: inventoryDashboard(),
+                          },
+                          {
+                              permission: 'inventory.view',
+                              title: 'Mercadorias',
+                              href: inventoryItems(),
+                          },
+                          {
+                              permission: 'inventory.view',
+                              title: 'Movimentações',
+                              href: inventoryMovements(),
+                          },
+                          {
+                              permission: 'inventory.view',
+                              title: 'Transferências',
+                              href: inventoryTransfers(),
+                          },
+                          {
+                              permission: 'inventory.view',
+                              title: 'Depósitos',
+                              href: inventoryWarehouses(),
+                          },
+                          {
+                              permission: 'inventory.view',
+                              title: 'Inventários',
+                              href: inventoryCounts(),
+                          },
+                          {
+                              permission: 'inventory.view_reports',
+                              title: 'Relatórios',
+                              href: inventoryReports(),
+                          },
+                          {
+                              permission: 'inventory.manage_settings',
+                              title: 'Configurações',
+                              href: inventorySettings(),
+                          },
+                      ]
+                          .filter(({ permission }) => tenant.can(permission))
+                          .map(({ title, href }) => ({ title, href })),
+                  },
+              ]
+            : []),
+        ...(tenant.can('payments.view')
+            ? [
+                  {
+                      title: 'Pagamentos',
+                      href: paymentsDashboard(),
+                      icon: QrCode,
+                      items: [
+                          {
+                              permission: 'payments.view',
+                              title: 'Visão geral',
+                              href: paymentsDashboard(),
+                          },
+                          {
+                              permission: 'payments.view',
+                              title: 'Cobranças',
+                              href: paymentCharges(),
+                          },
+                          {
+                              permission: 'payments.create',
+                              title: 'Nova cobrança',
+                              href: createPaymentCharge(),
+                          },
+                          {
+                              permission: 'payments.reconcile',
+                              title: 'Conciliação',
+                              href: paymentReconciliation(),
+                          },
+                          {
+                              permission: 'payments.view_reports',
+                              title: 'Relatórios',
+                              href: paymentReports(),
+                          },
+                          {
+                              permission: 'payments.manage_providers',
+                              title: 'Configurações',
+                              href: paymentSettings(),
+                          },
+                      ]
+                          .filter(({ permission }) => tenant.can(permission))
+                          .map(({ title, href }) => ({ title, href })),
+                  },
+              ]
+            : []),
+        ...(tenant.can('fiscal.view')
+            ? [
+                  {
+                      title: 'Documentos fiscais',
+                      href: fiscalDashboard(),
+                      icon: FileText,
+                      items: [
+                          {
+                              permission: 'fiscal.view',
+                              title: 'Visão geral',
+                              href: fiscalDashboard(),
+                          },
+                          {
+                              permission: 'fiscal.view',
+                              title: 'Documentos',
+                              href: fiscalDocuments(),
+                          },
+                          {
+                              permission: 'fiscal.create_draft',
+                              title: 'Novo documento',
+                              href: createFiscalDocument(),
+                          },
+                          {
+                              permission: 'fiscal.view',
+                              title: 'Dados fiscais dos itens',
+                              href: fiscalItems(),
+                          },
+                          {
+                              permission: 'fiscal.view_reports',
+                              title: 'Relatórios',
+                              href: fiscalReports(),
+                          },
+                          {
+                              permission: 'fiscal.manage_settings',
+                              title: 'Configurações',
+                              href: fiscalSettings(),
+                          },
+                      ]
+                          .filter(({ permission }) => tenant.can(permission))
+                          .map(({ title, href }) => ({ title, href })),
+                  },
+              ]
+            : []),
+        ...(tenant.can('pos.operate')
+            ? [
+                  {
+                      title: 'PDV',
+                      href: posHome(),
+                      icon: Store,
+                      items: [
+                          {
+                              permission: 'pos.operate',
+                              title: 'Frente de caixa',
+                              href: posHome(),
+                          },
+                          {
+                              permission: 'pos.view_sessions',
+                              title: 'Sessões de caixa',
+                              href: posSessions(),
+                          },
+                          {
+                              permission: 'pos.view_sessions',
+                              title: 'Vendas do caixa',
+                              href: posSales(),
+                          },
+                          {
+                              permission: 'pos.view_reports',
+                              title: 'Relatórios',
+                              href: posReports(),
+                          },
+                          {
+                              permission: 'pos.manage_terminals',
+                              title: 'Terminais',
+                              href: posTerminals(),
+                          },
+                          {
+                              permission: 'pos.manage_settings',
+                              title: 'Configurações',
+                              href: posSettings(),
+                          },
+                      ]
+                          .filter(({ permission }) => tenant.can(permission))
+                          .map(({ title, href }) => ({ title, href })),
+                  },
+              ]
+            : []),
+        ...(tenant.hasModule('finance')
+            ? [
+                  {
+                      title: 'Financeiro',
+                      href: finance(),
+                      icon: Wallet,
+                      items: [
+                          {
+                              permission: 'finance.view_dashboard',
+                              title: 'Visão geral',
+                              href: finance(),
+                          },
+                          {
+                              permission: 'finance.view_receivables',
+                              title: 'Contas a receber',
+                              href: financeTitles('receivables'),
+                          },
+                          {
+                              permission: 'finance.view_payables',
+                              title: 'Contas a pagar',
+                              href: financeTitles('payables'),
+                          },
+                          {
+                              permission: 'finance.view_accounts',
+                              title: 'Movimentações',
+                              href: financeMovements(),
+                          },
+                          {
+                              permission: 'finance.view_accounts',
+                              title: 'Contas financeiras',
+                              href: financeAccounts(),
+                          },
+                          {
+                              permission: 'finance.view_accounts',
+                              title: 'Transferências',
+                              href: financeTransfers(),
+                          },
+                          {
+                              permission: 'finance.view_reports',
+                              title: 'Fluxo de caixa',
+                              href: cashFlow(),
+                          },
+                          {
+                              permission: 'finance.manage_recurrences',
+                              title: 'Recorrências',
+                              href: recurrences(),
+                          },
+                          {
+                              permission: 'finance.reconcile',
+                              title: 'Conciliação',
+                              href: reconciliation(),
+                          },
+                          {
+                              permission: 'finance.view_reports',
+                              title: 'Relatórios',
+                              href: financeReports(),
+                          },
+                          {
+                              permission: 'finance.manage_categories',
+                              title: 'Configurações',
+                              href: financeSettings(),
+                          },
+                      ]
+                          .filter(({ permission }) => tenant.can(permission))
+                          .map(({ title, href }) => ({ title, href })),
+                  },
+              ]
+            : []),
+        ...(tenant.activeCompany !== null
+            ? [
+                  {
+                      title: 'Aplicações da empresa',
+                      href: companyApplications(),
+                      icon: Blocks,
+                  },
+              ]
+            : []),
         ...(tenant.canManageTeam && tenant.activeCompany !== null
             ? [
                   {
@@ -106,11 +480,22 @@ export function AppSidebar() {
             ? [
                   {
                       title: 'RootAdmin',
-                      href: companies(),
+                      href: rootAdminHome(),
                       icon: ShieldCheck,
                       items: [
+                          { title: 'Visão geral', href: rootAdminHome() },
                           { title: 'Empresas', href: companies() },
-                          { title: 'Catálogo de módulos', href: modules() },
+                          { title: 'Usuários', href: platformUsers() },
+                          { title: 'Catálogo de aplicações', href: modules() },
+                          { title: 'Contatos comerciais', href: contacts() },
+                          { title: 'Administradores', href: administrators() },
+                          { title: 'Pagamentos', href: rootAdminPayments() },
+                          {
+                              title: 'Documentos fiscais',
+                              href: rootAdminFiscal(),
+                          },
+                          { title: 'Auditoria', href: auditLogs() },
+                          { title: 'Configurações', href: platformSettings() },
                       ],
                   },
               ]

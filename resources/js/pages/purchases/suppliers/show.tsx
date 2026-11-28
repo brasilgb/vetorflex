@@ -3,7 +3,7 @@ import ConfirmButton from '@/components/confirm-button';
 import FormField from '@/components/form-field';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
-import RemoteLookup from '@/components/purchases/remote-lookup';
+import RemoteLookup from '@/components/remote-lookup';
 import StatusBadge from '@/components/purchases/status-badge';
 import type { Tab } from '@/components/tabs';
 import Tabs from '@/components/tabs';
